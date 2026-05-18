@@ -4,6 +4,12 @@ import 'package:http/http.dart' as http;
 class ApiClient {
   static String get baseUrl => dotenv.env['API_BASE_URL'] ?? '';
 
+  static void ensureBaseUrl() {
+    if (baseUrl.isEmpty) {
+      throw StateError('API_BASE_URL is not set in .env');
+    }
+  }
+
   static String? _token;
   static final http.Client _client = http.Client();
 
