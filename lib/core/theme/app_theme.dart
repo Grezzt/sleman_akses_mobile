@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // --- DESIGN TOKENS ---
@@ -21,10 +20,11 @@ class AppTheme {
   static ThemeData build() => lightTheme;
 
   static ThemeData get lightTheme {
-    final baseTextTheme = GoogleFonts.interTextTheme();
+    final baseTextTheme = ThemeData.light().textTheme;
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'KitRounded',
       scaffoldBackgroundColor: background,
       colorScheme: const ColorScheme.light(
         primary: primary,
@@ -77,7 +77,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
           ),
-          textStyle: GoogleFonts.inter(
+          textStyle: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
@@ -107,8 +107,8 @@ class AppTheme {
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: error, width: 1.5),
         ),
-        labelStyle: GoogleFonts.inter(color: textMuted, fontSize: 14),
-        hintStyle: GoogleFonts.inter(color: border, fontSize: 14),
+        labelStyle: const TextStyle(color: textMuted, fontSize: 14),
+        hintStyle: const TextStyle(color: border, fontSize: 14),
       ),
       cardTheme: CardThemeData(
         color: surface,
@@ -139,11 +139,11 @@ class AppTheme {
         backgroundColor: surface,
         selectedColor: secondary,
         disabledColor: border.withOpacity(0.5),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: const TextStyle(
           color: textPrimary,
           fontWeight: FontWeight.w500,
         ),
-        secondaryLabelStyle: GoogleFonts.inter(
+        secondaryLabelStyle: const TextStyle(
           color: primary,
           fontWeight: FontWeight.w600,
         ),
