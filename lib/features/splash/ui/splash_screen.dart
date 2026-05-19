@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -59,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: Column(
           children: [
             const Spacer(flex: 2),
-            Image.asset(
+            SvgPicture.asset(
               'public/Logo Image_margin.svg',
               width: 132,
               height: 132,

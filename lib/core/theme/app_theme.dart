@@ -4,7 +4,7 @@ class AppTheme {
   // --- DESIGN TOKENS ---
   static const Color primary = Color(0xFF037940);
   static const Color primaryHover = Color(0xFF025C30);
-  static const Color secondary = Color(0xFFBFD852);
+  static const Color secondary = Color(0xFFe86a33);
   static const Color background = Color(0xFFF1F1F1);
   static const Color surface = Color(0xFFFFFFFF);
 
