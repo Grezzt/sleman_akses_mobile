@@ -5,10 +5,10 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/logic/auth_controller.dart';
-import 'features/auth/ui/screens/auth_gate.dart';
 import 'features/auth/ui/screens/login_screen.dart';
 import 'features/auth/ui/screens/register_screen.dart';
 import 'features/home/ui/screens/home_screen.dart';
+import 'features/splash/ui/splash_screen.dart';
 import 'core/storage/token_storage.dart';
 
 class App extends StatelessWidget {
@@ -27,7 +27,7 @@ class App extends StatelessWidget {
       child: MaterialApp(
         title: 'Sleman Akses',
         theme: AppTheme.build(),
-        home: const AuthGate(),
+        home: const SplashScreen(),
         routes: {
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
