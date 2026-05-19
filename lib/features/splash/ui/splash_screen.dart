@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/logic/auth_controller.dart';
 import '../../auth/ui/screens/login_screen.dart';
 import '../../home/ui/screens/home_screen.dart';
+import '../../onboarding/data/onboarding_storage.dart';
+import '../../onboarding/ui/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,6 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _progressController;
   bool _ready = false;
   bool _goHome = false;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -30,7 +33,15 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     final auth = context.read<AuthController>();
-    _loadFuture = auth.loadFromStorage();
+    final onboardingStorage = OnboardingStorage();
+    _loadFuture =
+        Future.wait([
+          auth.loadFromStorage(),
+          onboardingStorage.isCompleted(),
+        ]).then((results) {
+          final completed = results[1] as bool;
+          _showOnboarding = !completed;
+        });
     _loadFuture.then((_) async {
       if (!mounted) return;
       setState(() {
@@ -39,7 +50,9 @@ class _SplashScreenState extends State<SplashScreen>
       });
       await _progressController.forward();
       if (!mounted) return;
-      final next = _goHome ? const HomeScreen() : const LoginScreen();
+      final next = _showOnboarding
+          ? OnboardingScreen(goHome: _goHome)
+          : (_goHome ? const HomeScreen() : const LoginScreen());
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => next));
