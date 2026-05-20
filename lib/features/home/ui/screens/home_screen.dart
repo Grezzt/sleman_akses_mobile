@@ -160,10 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           top: 16,
                           left: 16,
                           right: 16,
-                          child: _buildCategoryChips(
-                            context,
-                            categories,
-                          ),
+                          child: _buildCategoryChips(context, categories),
                         ),
                       ],
                     );
@@ -345,10 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text('Fasilitas', style: textTheme.titleMedium),
                 const SizedBox(height: 8),
                 if (location.facilities.isEmpty)
-                  Text(
-                    'Belum ada data fasilitas.',
-                    style: textTheme.bodyMedium,
-                  )
+                  Text('Belum ada data fasilitas.', style: textTheme.bodyMedium)
                 else
                   ...location.facilities.map((facility) {
                     final icon = facility.available

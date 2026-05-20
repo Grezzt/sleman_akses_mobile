@@ -16,8 +16,7 @@ class HomeController {
       ValueNotifier<List<MapLocation>>([]);
   final ValueNotifier<List<FacilityCategory>> categories =
       ValueNotifier<List<FacilityCategory>>([]);
-  final ValueNotifier<int?> selectedCategoryId =
-      ValueNotifier<int?>(null);
+  final ValueNotifier<int?> selectedCategoryId = ValueNotifier<int?>(null);
 
   Future<void> load() async {
     isLoading.value = true;
@@ -53,12 +52,10 @@ class HomeController {
       return items;
     }
 
-    final selectedCategory = categories
-        .cast<FacilityCategory?>()
-        .firstWhere(
-          (category) => category?.id == selectedId,
-          orElse: () => null,
-        );
+    final selectedCategory = categories.cast<FacilityCategory?>().firstWhere(
+      (category) => category?.id == selectedId,
+      orElse: () => null,
+    );
 
     final selectedName = selectedCategory?.name.toLowerCase().trim();
     if (selectedName == null || selectedName.isEmpty) {
