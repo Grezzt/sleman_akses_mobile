@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:sleman_akses_mobile/app.dart';
 
 import '../../logic/auth_controller.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -133,9 +134,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 18),
+                padding: const EdgeInsets.symmetric(vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF2F1),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Center(
@@ -351,7 +351,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Text('Daftar Sekarang'),
+                            : Text(
+                                'Daftar Sekarang',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.surface,
+                                ),
+                              ),
                       ),
                     ),
                   ],
