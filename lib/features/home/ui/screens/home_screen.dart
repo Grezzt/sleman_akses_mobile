@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _selectedIndex,
           children: [
             _buildExploreTab(context),
-            _buildPlaceholderTab(context, 'Fasilitas'),
+            _buildFacilitiesTab(context),
             _buildPlaceholderTab(context, 'Berita'),
             _buildPlaceholderTab(context, 'Laporan'),
             _buildPlaceholderTab(context, 'Profil'),
@@ -240,6 +240,198 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildFacilitiesTab(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _controller.isLoading,
+      builder: (context, isLoading, _) {
+        return ValueListenableBuilder<String?>(
+          valueListenable: _controller.errorMessage,
+          builder: (context, errorMessage, __) {
+            if (isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (errorMessage != null) {
+              return _buildErrorState(context, errorMessage);
+            }
+
+            return ValueListenableBuilder<List<MapLocation>>(
+              valueListenable: _controller.locations,
+              builder: (context, locations, ___) {
+                return ValueListenableBuilder<List<FacilityCategory>>(
+                  valueListenable: _controller.categories,
+                  builder: (context, categories, ____) {
+                    if (locations.isEmpty) {
+                      return _buildEmptyState(
+                        context,
+                        'Belum ada fasilitas dipublikasikan.',
+                      );
+                    }
+
+                    final filteredLocations = _controller.filterLocations(
+                      locations,
+                      categories,
+                    );
+                    final searchedLocations = _applySearchFilter(
+                      filteredLocations,
+                      _searchQuery,
+                    );
+
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSearchRow(context),
+                              const SizedBox(height: 12),
+                              _buildCategoryChips(context, categories),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: searchedLocations.isEmpty
+                              ? _buildEmptyState(context, 'Fasilitas tidak ditemukan.')
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  itemCount: searchedLocations.length,
+                                  itemBuilder: (context, index) {
+                                    final location = searchedLocations[index];
+                                    return _buildFacilityCard(context, location);
+                                  },
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFacilityCard(BuildContext context, MapLocation location) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final photoUrls = location.photoUrl.isNotEmpty ? location.photoUrl.split(',') : [];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      child: InkWell(
+        onTap: () => _showLocationDetails(context, location),
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: photoUrls.isNotEmpty
+                    ? Image.network(
+                        photoUrls[0].trim(),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
+                      )
+                    : _buildPlaceholderImage(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          location.placeName,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (location.status.isNotEmpty)
+                        _buildBadge(
+                          label: _statusLabel(location.status),
+                          background: _statusColor(colorScheme, location.status),
+                          foreground: colorScheme.onPrimary,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 16, color: AppTheme.textMuted),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          location.address,
+                          style: textTheme.bodySmall?.copyWith(color: AppTheme.textMuted),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (location.facilities.where((f) => f.available).isNotEmpty)
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: location.facilities
+                          .where((f) => f.available)
+                          .map((f) => Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(_resolveFacilityIcon(f.category), size: 14, color: colorScheme.primary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      f.category,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      color: Colors.black12,
+      alignment: Alignment.center,
+      child: const Icon(Icons.image_not_supported, color: Colors.black54),
     );
   }
 
