@@ -8,6 +8,7 @@ import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/home_repository.dart';
 import '../../data/models/facility_category.dart';
+import '../../data/models/map_facility.dart';
 import '../../data/models/map_location.dart';
 import '../../logic/home_controller.dart';
 
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
   final MapController _mapController = MapController();
   LatLng? _deviceLocation;
   bool _isLocating = false;
@@ -134,6 +136,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       locations,
                       categories,
                     );
+                    final searchedLocations = _applySearchFilter(
+                      filteredLocations,
+                      _searchQuery,
+                    );
+                    final selectedCategoryName = _resolveSelectedCategoryName(
+                      categories,
+                    );
 
                     return Stack(
                       children: [
@@ -157,7 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             MarkerLayer(
                               markers: _buildMarkers(
                                 context,
-                                filteredLocations,
+                                searchedLocations,
+                                selectedCategoryName,
                               ),
                             ),
                           ],
@@ -312,6 +322,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   onSelected: (_) {
                     _controller.setSelectedCategory(category?.id);
+                    setState(() {});
                   },
                 ),
               );
@@ -325,15 +336,17 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Marker> _buildMarkers(
     BuildContext context,
     List<MapLocation> locations,
+    String selectedCategoryName,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return locations.map((location) {
-      final markerIcon = _resolveMarkerIcon(location);
+      final markerIcon = _resolveMarkerIcon(location, selectedCategoryName);
       return Marker(
         point: LatLng(location.latitude, location.longitude),
         width: 52,
         height: 52,
+        rotate: false,
         child: GestureDetector(
           onTap: () => _showLocationDetails(context, location),
           child: Container(
@@ -377,6 +390,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: TextField(
               controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
               decoration: const InputDecoration(
                 hintText: 'Cari fasilitas di Sleman...',
                 prefixIcon: Icon(Icons.search),
@@ -410,25 +428,86 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _resolveMarkerIcon(MapLocation location) {
-    final url = location.facilities.isNotEmpty
-        ? location.facilities.first.iconMarker
-        : '';
-    if (url.isEmpty) {
-      return const Icon(Icons.location_on, color: AppTheme.primary);
+  Widget _resolveMarkerIcon(MapLocation location, String selectedCategoryName) {
+    MapFacility? selectedFacility;
+    if (selectedCategoryName.isNotEmpty) {
+      selectedFacility = location.facilities.firstWhere(
+        (facility) =>
+            facility.category.toLowerCase().trim() ==
+            selectedCategoryName.toLowerCase().trim(),
+        orElse: () =>
+            const MapFacility(category: '', iconMarker: '', available: false),
+      );
+      if (selectedFacility.category.isEmpty) {
+        selectedFacility = null;
+      }
     }
 
-    return ClipOval(
-      child: Image.network(
-        url,
-        width: 40,
-        height: 40,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
-          return const Icon(Icons.location_on, color: AppTheme.primary);
-        },
-      ),
+    final preferredFacility =
+        selectedFacility ??
+        location.facilities.firstWhere(
+          (facility) => facility.available == true,
+          orElse: () => location.facilities.isNotEmpty
+              ? location.facilities.first
+              : const MapFacility(
+                  category: '',
+                  iconMarker: '',
+                  available: false,
+                ),
+        );
+
+    final iconData = _resolveFacilityIcon(preferredFacility.category);
+    return Icon(iconData, color: AppTheme.primary, size: 26);
+  }
+
+  String _resolveSelectedCategoryName(List<FacilityCategory> categories) {
+    final selectedId = _controller.selectedCategoryId.value;
+    if (selectedId == null) {
+      return '';
+    }
+    final selected = categories.firstWhere(
+      (category) => category.id == selectedId,
+      orElse: () => const FacilityCategory(id: -1, name: '', iconMarker: ''),
     );
+    return selected.name;
+  }
+
+  IconData _resolveFacilityIcon(String category) {
+    final normalized = category.toLowerCase().trim();
+    if (normalized.contains('ramp')) {
+      return Icons.accessible;
+    }
+    if (normalized.contains('toilet')) {
+      return Icons.wc;
+    }
+    if (normalized.contains('parkir')) {
+      return Icons.local_parking;
+    }
+    if (normalized.contains('lift') || normalized.contains('elevator')) {
+      return Icons.elevator;
+    }
+    return Icons.location_on;
+  }
+
+  List<MapLocation> _applySearchFilter(
+    List<MapLocation> locations,
+    String query,
+  ) {
+    final normalized = query.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return locations;
+    }
+
+    return locations.where((location) {
+      final name = location.placeName.toLowerCase();
+      final address = location.address.toLowerCase();
+      final facilityMatch = location.facilities.any(
+        (facility) => facility.category.toLowerCase().contains(normalized),
+      );
+      return name.contains(normalized) ||
+          address.contains(normalized) ||
+          facilityMatch;
+    }).toList();
   }
 
   Marker _buildDeviceMarker() {
@@ -437,6 +516,7 @@ class _HomeScreenState extends State<HomeScreen> {
       point: location,
       width: 46,
       height: 46,
+      rotate: false,
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.primary.withOpacity(0.15),
@@ -511,81 +591,262 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showLocationDetails(BuildContext context, MapLocation location) {
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
         final textTheme = Theme.of(context).textTheme;
+        final colorScheme = Theme.of(context).colorScheme;
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              24 + MediaQuery.of(context).viewInsets.bottom,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Detail Fasilitas', style: textTheme.titleLarge),
-                const SizedBox(height: 12),
-                if (location.photoUrl.isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      location.photoUrl,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) {
-                        return Container(
-                          height: 180,
-                          color: Colors.black12,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.image_not_supported),
-                        );
-                      },
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    children: [
+                      AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: location.photoUrl.isNotEmpty
+                            ? Image.network(
+                                location.photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) {
+                                  return Container(
+                                    color: Colors.black12,
+                                    alignment: Alignment.center,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                color: Colors.black12,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.image_not_supported),
+                              ),
+                      ),
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: location.facilityType.isNotEmpty
+                            ? _buildBadge(
+                                label: location.facilityType.toUpperCase(),
+                                background: colorScheme.secondary,
+                                foreground: colorScheme.primary,
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      Positioned(
+                        top: 12,
+                        right: 12,
+                        child: location.status.isNotEmpty
+                            ? _buildBadge(
+                                label: _statusLabel(location.status),
+                                background: _statusColor(
+                                  colorScheme,
+                                  location.status,
+                                ),
+                                foreground: colorScheme.onPrimary,
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (location.placeName.isNotEmpty)
+                  Text(
+                    location.placeName,
+                    style: textTheme.titleLarge?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                if (location.photoUrl.isNotEmpty) const SizedBox(height: 12),
+                if (location.placeName.isNotEmpty) const SizedBox(height: 8),
+                if (location.address.isNotEmpty)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          location.address,
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (location.address.isNotEmpty) const SizedBox(height: 8),
+                if (location.reportedBy.isNotEmpty)
+                  Text(
+                    'Dilaporkan oleh ${location.reportedBy}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textMuted,
+                    ),
+                  ),
+                if (location.placeName.isNotEmpty ||
+                    location.address.isNotEmpty ||
+                    location.reportedBy.isNotEmpty)
+                  const SizedBox(height: 20),
                 Text(
-                  'Dilaporkan oleh ${location.reportedBy}',
-                  style: textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Publish: ${location.publishDate}',
-                  style: textTheme.bodyMedium,
+                  'Fitur Aksesibilitas',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 12),
-                Text('Fasilitas', style: textTheme.titleMedium),
-                const SizedBox(height: 8),
-                if (location.facilities.isEmpty)
+                if (_controller.categories.value.isEmpty)
                   Text('Belum ada data fasilitas.', style: textTheme.bodyMedium)
                 else
-                  ...location.facilities.map((facility) {
-                    final icon = facility.available
-                        ? Icons.check_circle
-                        : Icons.cancel;
-                    final color = facility.available
-                        ? Colors.green
-                        : Colors.redAccent;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          Icon(icon, color: color, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              facility.category,
-                              style: textTheme.bodyMedium,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: _controller.categories.value.map((category) {
+                      final match = location.facilities.firstWhere(
+                        (facility) =>
+                            facility.category.toLowerCase().trim() ==
+                            category.name.toLowerCase().trim(),
+                        orElse: () => const MapFacility(
+                          category: '',
+                          iconMarker: '',
+                          available: false,
+                        ),
+                      );
+                      final isAvailable =
+                          match.category.isNotEmpty && match.available == true;
+                      final icon = isAvailable ? Icons.accessible : Icons.block;
+                      final iconColor = isAvailable
+                          ? colorScheme.primary
+                          : AppTheme.border;
+                      final textColor = isAvailable
+                          ? AppTheme.textPrimary
+                          : AppTheme.textMuted;
+                      final iconData = _resolveFacilityIcon(category.name);
+
+                      return Container(
+                        width: (MediaQuery.of(context).size.width - 64) / 2,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.border),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(iconData, color: iconColor, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                category.name,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: textColor,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.navigation),
+                    label: const Text('Rute Navigasi'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
+                      minimumSize: const Size.fromHeight(52),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
                       ),
-                    );
-                  }),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Lihat Detail Lengkap',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  Widget _buildBadge({
+    required String label,
+    required Color background,
+    required Color foreground,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: foreground,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          letterSpacing: 0.4,
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(String status) {
+    final normalized = status.toLowerCase().trim();
+    if (normalized == 'active') {
+      return 'AKTIF';
+    }
+    if (normalized == 'inactive') {
+      return 'NONAKTIF';
+    }
+    if (normalized.isEmpty) {
+      return 'STATUS';
+    }
+    return normalized.toUpperCase();
+  }
+
+  Color _statusColor(ColorScheme scheme, String status) {
+    final normalized = status.toLowerCase().trim();
+    if (normalized == 'inactive') {
+      return AppTheme.error;
+    }
+    return scheme.primary;
   }
 
   LatLng _resolveInitialCenter(List<MapLocation> locations) {
