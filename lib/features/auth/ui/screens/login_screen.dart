@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../logic/auth_controller.dart';
@@ -102,13 +103,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 72,
                             height: 72,
                             decoration: BoxDecoration(
-                              color: AppTheme.surface,
+                              color: AppTheme.primary,
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Icon(
-                              Icons.place,
-                              color: AppTheme.primary,
-                              size: 32,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: SvgPicture.asset(
+                                'public/Logo Image_margin.svg',
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 12),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../logic/auth_controller.dart';
+import '../../../../core/theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
@@ -53,38 +56,114 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  int _passwordStrengthScore(String value) {
+    if (value.isEmpty) return 0;
+    var score = 0;
+    if (value.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(value)) score++;
+    if (RegExp(r'[0-9]').hasMatch(value)) score++;
+    if (RegExp(r'[^A-Za-z0-9]').hasMatch(value)) score++;
+    return score.clamp(0, 3);
+  }
+
+  String _strengthLabel(int score) {
+    switch (score) {
+      case 1:
+        return 'Lemah';
+      case 2:
+        return 'Sedang';
+      case 3:
+        return 'Kuat';
+      default:
+        return 'Lemah';
+    }
+  }
+
+  Color _strengthColor(int score) {
+    switch (score) {
+      case 1:
+        return AppTheme.error;
+      case 2:
+        return AppTheme.warning;
+      case 3:
+        return AppTheme.success;
+      default:
+        return AppTheme.error;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
+    final strengthScore = _passwordStrengthScore(_passwordController.text);
+    final strengthLabel = _strengthLabel(strengthScore);
+    final strengthColor = _strengthColor(strengthScore);
+    final passwordsMatch =
+        _confirmController.text.isEmpty ||
+        _confirmController.text == _passwordController.text;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Daftar')),
+      backgroundColor: const Color(0xFFE8ECE4),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFE8ECE4),
+        elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Buat Akun Baru',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            color: AppTheme.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: AppTheme.primary),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Buat Akun Baru',
-                style: Theme.of(context).textTheme.headlineLarge,
-                textAlign: TextAlign.center,
+                'Bergabunglah dengan komunitas inklusif kami untuk akses fasilitas yang lebih mudah.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textMuted,
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.left,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Lengkapi data untuk mulai menggunakan aplikasi.',
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF2F1),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    'public/register asset.svg',
+                    width: 210,
+                    height: 210,
+                  ),
+                ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(
+                      'Nama Lengkap',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(
-                        labelText: 'Nama Lengkap',
+                        hintText: 'Masukkan nama lengkap',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -94,10 +173,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
+                    Text(
+                      'Email',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'Email'),
+                      decoration: const InputDecoration(
+                        hintText: 'contoh@email.com',
+                        prefixIcon: Icon(Icons.mail_outline),
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Email wajib diisi.';
@@ -106,16 +195,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
+                    Text(
+                      'Kata Sandi',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        hintText: 'Minimal 8 karakter',
+                        prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                           ),
                           onPressed: () {
                             setState(() {
@@ -128,18 +226,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Password wajib diisi.';
                         }
-                        if (value.length < 6) {
-                          return 'Password minimal 6 karakter.';
+                        if (value.length < 8) {
+                          return 'Password minimal 8 karakter.';
                         }
                         return null;
                       },
                     ),
+                    const SizedBox(height: 8),
+                    _PasswordStrengthBar(
+                      score: strengthScore,
+                      color: strengthColor,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Kekuatan: $strengthLabel',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: strengthColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 16),
+                    Text(
+                      'Konfirmasi Kata Sandi',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
                     TextFormField(
                       controller: _confirmController,
-                      obscureText: _obscurePassword,
-                      decoration: const InputDecoration(
-                        labelText: 'Konfirmasi Password',
+                      obscureText: _obscureConfirm,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        hintText: 'Masukkan ulang kata sandi',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: passwordsMatch
+                                ? AppTheme.textMuted
+                                : AppTheme.error,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirm = !_obscureConfirm;
+                            });
+                          },
+                        ),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -151,6 +286,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return null;
                       },
                     ),
+                    if (!passwordsMatch)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppTheme.error,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Kata sandi tidak cocok',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: AppTheme.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     if (auth.fieldError('full_name') != null)
                       Align(
@@ -177,30 +334,83 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: auth.isLoading ? null : _submit,
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Daftar'),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: auth.isLoading ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(26),
+                          ),
+                        ),
+                        child: auth.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Daftar Sekarang'),
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
-                },
-                child: const Text('Sudah punya akun? Masuk'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Sudah punya akun? ',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: AppTheme.textMuted),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    child: Text(
+                      'Masuk',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PasswordStrengthBar extends StatelessWidget {
+  const _PasswordStrengthBar({required this.score, required this.color});
+
+  final int score;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(3, (index) {
+        final isActive = index < score;
+        return Expanded(
+          child: Container(
+            height: 5,
+            margin: EdgeInsets.only(right: index == 2 ? 0 : 6),
+            decoration: BoxDecoration(
+              color: isActive ? color : AppTheme.border,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
