@@ -75,6 +75,10 @@ flutter:
     - public/onboarding slide 2.svg
     - public/onboarding slide 3.svg
     - public/register asset.svg
+    - public/konfirmasi titik lokasi aktif.svg
+    - public/konfirmasi-titik-lokasi-unactive.svg
+    - public/Tambah foto fasilitas umum.svg
+    - public/laporan sukses.svg
     - public/lift.png
     - public/ramp.png
     - public/toilet-difabel.png
