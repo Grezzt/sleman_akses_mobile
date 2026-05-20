@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
@@ -17,11 +20,34 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   bool _serviceEnabled = false;
   LocationPermission _permission = LocationPermission.denied;
   Position? _position;
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<XFile> _photos = [];
+
+  bool _hasRamp = false;
+  bool _hasElevator = false;
+  bool _hasDisabledToilet = false;
+  bool _hasDisabledParking = false;
 
   @override
   void initState() {
     super.initState();
     _checkLocationState();
+  }
+
+  Future<void> _pickPhotos() async {
+    final picked = await _imagePicker.pickMultiImage();
+    if (picked.isEmpty) {
+      return;
+    }
+    setState(() {
+      _photos.addAll(picked);
+    });
+  }
+
+  void _removePhoto(int index) {
+    setState(() {
+      _photos.removeAt(index);
+    });
   }
 
   Future<void> _checkLocationState() async {
@@ -167,6 +193,9 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     if (_currentStep == 1) {
       return _buildPhotoStep(context);
     }
+    if (_currentStep == 2) {
+      return _buildConfirmationStep(context);
+    }
 
     return const SizedBox.shrink();
   }
@@ -250,26 +279,78 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   }
 
   Widget _buildFooterAction(BuildContext context) {
+    final isStepThree = _currentStep == 2;
+    if (isStepThree) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {
+            // TODO: Submit report
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.primary,
+            foregroundColor: AppTheme.surface,
+          ),
+          child: const Text('Kirim laporan'),
+        ),
+      );
+    }
+
     final isNextEnabled = _currentStep != 0 || _isLocationReady;
-    final label = _currentStep == 1 ? 'Tambahkan' : 'Konfirmasi';
+    final isStepTwo = _currentStep == 1;
+    final label = isStepTwo ? 'Unggah Foto Lainnya' : 'Konfirmasi';
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        onPressed: isNextEnabled
-            ? () {
-                if (_currentStep == 0) {
-                  setState(() {
-                    _currentStep = 1;
-                  });
-                }
-              }
-            : null,
-        child: Text(label),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ElevatedButton(
+            onPressed: isNextEnabled
+                ? () {
+                    if (_currentStep == 0) {
+                      setState(() {
+                        _currentStep = 1;
+                      });
+                      return;
+                    }
+                    if (_currentStep == 1) {
+                      _pickPhotos();
+                      return;
+                    }
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              foregroundColor: AppTheme.surface,
+              backgroundColor: AppTheme.primary,
+            ),
+            child: Text(label),
+          ),
+          if (isStepTwo && _photos.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _currentStep = 2;
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: AppTheme.surface,
+              ),
+              child: const Text('Lanjut'),
+            ),
+          ],
+        ],
       ),
     );
   }
 
   Widget _buildPhotoStep(BuildContext context) {
+    if (_photos.isNotEmpty) {
+      return _buildPhotoConfirmState(context);
+    }
+
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -285,7 +366,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         Text(
           'Tambahkan foto\nfasilitas umum',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textOnsurface,
             fontWeight: FontWeight.w800,
           ),
           textAlign: TextAlign.center,
@@ -293,20 +374,78 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         const SizedBox(height: 20),
         Expanded(
           child: Center(
-            child: Image.asset(
+            child: SvgPicture.asset(
               'public/Tambah foto fasilitas umum.svg',
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) {
-                return const Icon(
-                  Icons.image,
-                  size: 160,
-                  color: AppTheme.border,
-                );
-              },
             ),
           ),
         ),
         _buildPhotoHintCard(context),
+      ],
+    );
+  }
+
+  Widget _buildPhotoConfirmState(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        Text(
+          'LANGKAH 2/3',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AppTheme.primary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Konfirmasi foto\nfasilitas umum',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.textOnsurface,
+            fontWeight: FontWeight.w800,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        Expanded(
+          child: ListView.separated(
+            itemCount: _photos.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final photo = _photos[index];
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: Image.file(File(photo.path), fit: BoxFit.cover),
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: InkWell(
+                      onTap: () => _removePhoto(index),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1F2937),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
       ],
     );
   }
@@ -443,6 +582,174 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                 : Text(buttonLabel),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildConfirmationStep(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 16),
+          Text(
+            'LANGKAH 3/3',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppTheme.primary,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Konfirmasi data',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: AppTheme.textOnsurface,
+              fontWeight: FontWeight.w800,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            height: 180,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (_photos.length > 2)
+                  Transform.translate(
+                    offset: const Offset(-24, 12),
+                    child: Transform.rotate(
+                      angle: -0.15,
+                      child: _buildStackedPhoto(_photos[2].path),
+                    ),
+                  ),
+                if (_photos.length > 1)
+                  Transform.translate(
+                    offset: const Offset(24, 6),
+                    child: Transform.rotate(
+                      angle: 0.15,
+                      child: _buildStackedPhoto(_photos[1].path),
+                    ),
+                  ),
+                if (_photos.isNotEmpty) _buildStackedPhoto(_photos[0].path),
+                if (_photos.isEmpty) _buildStackedPhoto(''),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '${_photos.length} foto diunggah',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppTheme.textMuted),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 40),
+          Text(
+            'Pilih Ketersediaan Fasilitas',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppTheme.textPrimary,
+            ),
+            textAlign: TextAlign.start,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAEAEA),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                _buildCheckboxTile(
+                  title: 'Terdapat Ramp',
+                  value: _hasRamp,
+                  icon: Icons.accessible_forward,
+                  onChanged: (val) => setState(() => _hasRamp = val ?? false),
+                ),
+                _buildCheckboxTile(
+                  title: 'Terdapat Lift',
+                  value: _hasElevator,
+                  icon: Icons.elevator,
+                  onChanged: (val) =>
+                      setState(() => _hasElevator = val ?? false),
+                ),
+                _buildCheckboxTile(
+                  title: 'Toilet Difabel',
+                  value: _hasDisabledToilet,
+                  icon: Icons.wc,
+                  onChanged: (val) =>
+                      setState(() => _hasDisabledToilet = val ?? false),
+                ),
+                _buildCheckboxTile(
+                  title: 'Parkir Khusus Difabel',
+                  value: _hasDisabledParking,
+                  icon: Icons.local_parking,
+                  onChanged: (val) =>
+                      setState(() => _hasDisabledParking = val ?? false),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStackedPhoto(String path) {
+    return Container(
+      width: 140,
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: path.isEmpty
+            ? Container(color: Colors.grey[300])
+            : Image.file(File(path), fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  Widget _buildCheckboxTile({
+    required String title,
+    required bool value,
+    required IconData icon,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        checkboxTheme: CheckboxThemeData(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          side: const BorderSide(color: Colors.grey, width: 1.5),
+        ),
+      ),
+      child: CheckboxListTile(
+        value: value,
+        onChanged: onChanged,
+        title: Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyLarge?.copyWith(color: AppTheme.textPrimary),
+        ),
+        secondary: Icon(icon, color: AppTheme.primary),
+        controlAffinity: ListTileControlAffinity.leading,
+        activeColor: AppTheme.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        dense: true,
       ),
     );
   }

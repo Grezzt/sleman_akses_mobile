@@ -10,6 +10,8 @@ class AppTheme {
 
   static const Color textPrimary = Color(0xFF037940);
   static const Color textMuted = Color(0xFF4B5563);
+  // static const Color textOnPrimary = Color(0xFFFFFFFF);
+  static const Color textOnsurface = Color.fromARGB(255, 15, 15, 15);
   static const Color border = Color(0xFFD4D4D4);
 
   // Semantic colors
@@ -34,7 +36,7 @@ class AppTheme {
         error: error,
         onError: surface,
         surface: surface,
-        onSurface: textPrimary,
+        onSurface: textOnsurface,
       ),
       textTheme: baseTextTheme.copyWith(
         headlineLarge: baseTextTheme.headlineLarge?.copyWith(
