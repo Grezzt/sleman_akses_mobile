@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/home_repository.dart';
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
   int _selectedIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -36,7 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sleman Akses')),
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
@@ -50,7 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, '/report/create');
+        },
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
@@ -160,7 +164,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           top: 16,
                           left: 16,
                           right: 16,
-                          child: _buildCategoryChips(context, categories),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSearchRow(context),
+                              const SizedBox(height: 12),
+                              _buildCategoryChips(context, categories),
+                            ],
+                          ),
                         ),
                       ],
                     );
@@ -240,12 +251,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: ChoiceChip(
                   label: Text(label),
                   selected: isSelected,
-                  selectedColor: colorScheme.secondary,
+                  selectedColor: colorScheme.primary,
+                  backgroundColor: Colors.white,
                   labelStyle: TextStyle(
                     color: isSelected
-                        ? colorScheme.primary
+                        ? colorScheme.onPrimary
                         : colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
+                  ),
+                  shape: const StadiumBorder(
+                    side: BorderSide(color: AppTheme.primary, width: 1),
                   ),
                   onSelected: (_) {
                     _controller.setSelectedCategory(category?.id);
@@ -266,33 +281,106 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return locations.map((location) {
+      final markerIcon = _resolveMarkerIcon(location);
       return Marker(
         point: LatLng(location.latitude, location.longitude),
-        width: 44,
-        height: 44,
+        width: 52,
+        height: 52,
         child: GestureDetector(
           onTap: () => _showLocationDetails(context, location),
           child: Container(
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              color: colorScheme.surface,
               shape: BoxShape.circle,
+              border: Border.all(color: colorScheme.primary, width: 2),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-            child: Icon(
-              Icons.location_on,
-              color: colorScheme.onPrimary,
-              size: 24,
-            ),
+            child: markerIcon,
           ),
         ),
       );
     }).toList();
+  }
+
+  Widget _buildSearchRow(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                hintText: 'Cari fasilitas di Sleman...',
+                prefixIcon: Icon(Icons.search),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _buildIconActionButton(context, Icons.notifications_none),
+        const SizedBox(width: 12),
+        _buildIconActionButton(context, Icons.person_outline),
+      ],
+    );
+  }
+
+  Widget _buildIconActionButton(BuildContext context, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: colorScheme.primary),
+    );
+  }
+
+  Widget _resolveMarkerIcon(MapLocation location) {
+    final url = location.facilities.isNotEmpty
+        ? location.facilities.first.iconMarker
+        : '';
+    if (url.isEmpty) {
+      return const Icon(Icons.location_on, color: AppTheme.primary);
+    }
+
+    return ClipOval(
+      child: Image.network(
+        url,
+        width: 40,
+        height: 40,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) {
+          return const Icon(Icons.location_on, color: AppTheme.primary);
+        },
+      ),
+    );
   }
 
   void _showLocationDetails(BuildContext context, MapLocation location) {

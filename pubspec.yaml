@@ -75,6 +75,10 @@ flutter:
     - public/onboarding slide 2.svg
     - public/onboarding slide 3.svg
     - public/register asset.svg
+    - public/lift.png
+    - public/ramp.png
+    - public/toilet-difabel.png
+    - public/parkir-difabel.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

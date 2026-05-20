@@ -8,6 +8,7 @@ import 'features/auth/logic/auth_controller.dart';
 import 'features/auth/ui/screens/login_screen.dart';
 import 'features/auth/ui/screens/register_screen.dart';
 import 'features/home/ui/screens/home_screen.dart';
+import 'features/report/ui/screens/create_report_screen.dart';
 import 'features/splash/ui/splash_screen.dart';
 import 'core/storage/token_storage.dart';
 
@@ -32,6 +33,7 @@ class App extends StatelessWidget {
           '/login': (_) => const LoginScreen(),
           '/register': (_) => const RegisterScreen(),
           '/home': (_) => const HomeScreen(),
+          '/report/create': (_) => const CreateReportScreen(),
         },
       ),
     );
