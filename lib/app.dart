@@ -27,6 +27,7 @@ class App extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'Sleman Akses',
+        debugShowCheckedModeBanner: false,
         theme: AppTheme.build(),
         home: const SplashScreen(),
         routes: {

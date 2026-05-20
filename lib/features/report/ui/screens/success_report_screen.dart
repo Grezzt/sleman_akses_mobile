@@ -79,32 +79,28 @@ class SuccessReportScreen extends StatelessWidget {
                             _buildFacilityItem(
                               context,
                               title: 'Terdapat Ramp',
-                              iconPath: 'public/ramp.svg',
-                              fallbackIcon: Icons.accessible_forward,
+                              icon: Icons.accessible_forward,
                               isActive: hasRamp,
                             ),
                             const SizedBox(height: 16),
                             _buildFacilityItem(
                               context,
                               title: 'Terdapat Lift',
-                              iconPath: 'public/lift.svg',
-                              fallbackIcon: Icons.elevator,
+                              icon: Icons.elevator,
                               isActive: hasElevator,
                             ),
                             const SizedBox(height: 16),
                             _buildFacilityItem(
                               context,
                               title: 'Toilet Difabel',
-                              iconPath: 'public/toilet-difabel.svg',
-                              fallbackIcon: Icons.wc,
+                              icon: Icons.wc,
                               isActive: hasDisabledToilet,
                             ),
                             const SizedBox(height: 16),
                             _buildFacilityItem(
                               context,
                               title: 'Parkir Khusus',
-                              iconPath: 'public/parkir-difabel.svg',
-                              fallbackIcon: Icons.local_parking,
+                              icon: Icons.local_parking,
                               isActive: hasDisabledParking,
                             ),
                           ],
@@ -146,8 +142,7 @@ class SuccessReportScreen extends StatelessWidget {
   Widget _buildFacilityItem(
     BuildContext context, {
     required String title,
-    required String iconPath,
-    required IconData fallbackIcon,
+    required IconData icon,
     required bool isActive,
   }) {
     return Row(
@@ -160,14 +155,10 @@ class SuccessReportScreen extends StatelessWidget {
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: SvgPicture.asset(
-              iconPath,
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                isActive ? AppTheme.primary : Colors.red,
-                BlendMode.srcIn,
-              ),
+            child: Icon(
+              icon,
+              size: 24,
+              color: isActive ? AppTheme.primary : Colors.red,
             ),
           ),
         ),

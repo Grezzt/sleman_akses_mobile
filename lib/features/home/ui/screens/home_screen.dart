@@ -608,59 +608,104 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Stack(
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: location.photoUrl.isNotEmpty
-                            ? Image.network(
-                                location.photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) {
-                                  return Container(
+                StatefulBuilder(
+                  builder: (context, setSheetState) {
+                    final photoUrls = location.photoUrl.isNotEmpty ? location.photoUrl.split(',') : [];
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Stack(
+                        children: [
+                          AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: photoUrls.isNotEmpty
+                                ? PageView.builder(
+                                    itemCount: photoUrls.length,
+                                    onPageChanged: (index) {
+                                      setSheetState(() {
+                                        // This will only work if we keep track of index, but since we define the variable inside _showLocationDetails (we can't easily without editing above), we can just use a PageController or skip dynamic text and just use an indicator if needed, but actually we can define the variable outside StatefulBuilder.
+                                    // Wait, I will just do a simple PageView without text indicator to keep it extremely simple and avoid rewriting the signature. People can naturally swipe. Or better, let me use a dot indicator by just mapping over it? 
+                                    // Let me just declare a local variable `int currentPhotoIndex = 0;` inside the builder? No, it resets on setState.
+                                    // I'll just use PageView, it's enough.
+                                      });
+                                    },
+                                    itemBuilder: (context, index) {
+                                      return Image.network(
+                                        photoUrls[index].trim(),
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) {
+                                          return Container(
+                                            color: Colors.black12,
+                                            alignment: Alignment.center,
+                                            child: const Icon(Icons.image_not_supported),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  )
+                                : Container(
                                     color: Colors.black12,
                                     alignment: Alignment.center,
-                                    child: const Icon(
-                                      Icons.image_not_supported,
+                                    child: const Icon(Icons.image_not_supported),
+                                  ),
+                          ),
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            child: location.facilityType.isNotEmpty
+                                ? _buildBadge(
+                                    label: location.facilityType.toUpperCase(),
+                                    background: colorScheme.secondary,
+                                    foreground: colorScheme.primary,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: location.status.isNotEmpty
+                                ? _buildBadge(
+                                    label: _statusLabel(location.status),
+                                    background: _statusColor(
+                                      colorScheme,
+                                      location.status,
                                     ),
-                                  );
-                                },
-                              )
-                            : Container(
-                                color: Colors.black12,
-                                alignment: Alignment.center,
-                                child: const Icon(Icons.image_not_supported),
+                                    foreground: colorScheme.onPrimary,
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                          if (photoUrls.length > 1)
+                            Positioned(
+                              bottom: 12,
+                              left: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.swipe, color: Colors.white, size: 14),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Geser untuk melihat ${photoUrls.length} foto',
+                                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                        ],
                       ),
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: location.facilityType.isNotEmpty
-                            ? _buildBadge(
-                                label: location.facilityType.toUpperCase(),
-                                background: colorScheme.secondary,
-                                foreground: colorScheme.primary,
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: location.status.isNotEmpty
-                            ? _buildBadge(
-                                label: _statusLabel(location.status),
-                                background: _statusColor(
-                                  colorScheme,
-                                  location.status,
-                                ),
-                                foreground: colorScheme.onPrimary,
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                    ],
-                  ),
+                    );
+                  }
                 ),
                 const SizedBox(height: 16),
                 if (location.placeName.isNotEmpty)
