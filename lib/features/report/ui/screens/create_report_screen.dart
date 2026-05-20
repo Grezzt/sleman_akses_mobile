@@ -1,11 +1,17 @@
 import 'dart:io';
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import 'success_report_screen.dart';
 
 class CreateReportScreen extends StatefulWidget {
   const CreateReportScreen({super.key});
@@ -27,6 +33,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   bool _hasElevator = false;
   bool _hasDisabledToilet = false;
   bool _hasDisabledParking = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -284,15 +291,18 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {
-            // TODO: Submit report
-            Navigator.pop(context);
-          },
+          onPressed: _isSubmitting ? null : _submitReport,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primary,
             foregroundColor: AppTheme.surface,
           ),
-          child: const Text('Kirim laporan'),
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                )
+              : const Text('Kirim laporan'),
         ),
       );
     }
@@ -584,6 +594,116 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         ],
       ),
     );
+  }
+
+  Future<String?> _uploadToCloudinary(String filePath) async {
+    const cloudName = 'debmlrrkg';
+    const apiKey = '195725588395627';
+    const apiSecret = 'ic2RR5Cu9EqJmtQJSVQDDMk-X2M';
+
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final signatureString = 'timestamp=$timestamp$apiSecret';
+    final bytes = utf8.encode(signatureString);
+    final signature = sha1.convert(bytes).toString();
+
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['api_key'] = apiKey
+      ..fields['timestamp'] = timestamp.toString()
+      ..fields['signature'] = signature
+      ..files.add(await http.MultipartFile.fromPath('file', filePath));
+
+    final response = await request.send();
+    if (response.statusCode == 200) {
+      final responseData = await response.stream.bytesToString();
+      final jsonMap = jsonDecode(responseData);
+      return jsonMap['secure_url'];
+    }
+    return null;
+  }
+
+  Future<void> _submitReport() async {
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      List<String> uploadedUrls = [];
+      for (var photo in _photos) {
+        final url = await _uploadToCloudinary(photo.path);
+        if (url != null) {
+          uploadedUrls.add(url);
+        }
+      }
+
+      if (uploadedUrls.isEmpty && _photos.isNotEmpty) {
+        throw Exception('Gagal mengunggah foto ke server penyimpanan.');
+      }
+
+      final uri = Uri.parse('${ApiClient.baseUrl}/reports');
+      final request = http.MultipartRequest('POST', uri);
+
+      final headers = Map<String, String>.from(ApiClient.headers);
+      headers.remove('Content-Type');
+      request.headers.addAll(headers);
+
+      if (_position != null) {
+        request.fields['latitude'] = _position!.latitude.toString();
+        request.fields['longitude'] = _position!.longitude.toString();
+      }
+
+      // ID references: 1: Ramp, 2: Toilet Difabel, 3: Parkir Difabel, 4: Lift
+      request.fields['categories[0][id]'] = '1';
+      request.fields['categories[0][available]'] = _hasRamp ? '1' : '0';
+
+      request.fields['categories[1][id]'] = '4';
+      request.fields['categories[1][available]'] = _hasElevator ? '1' : '0';
+
+      request.fields['categories[2][id]'] = '2';
+      request.fields['categories[2][available]'] = _hasDisabledToilet ? '1' : '0';
+
+      request.fields['categories[3][id]'] = '3';
+      request.fields['categories[3][available]'] = _hasDisabledParking ? '1' : '0';
+
+      request.fields['photo_url'] = uploadedUrls.join(',');
+
+      final response = await request.send();
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SuccessReportScreen(
+                hasRamp: _hasRamp,
+                hasElevator: _hasElevator,
+                hasDisabledToilet: _hasDisabledToilet,
+                hasDisabledParking: _hasDisabledParking,
+              ),
+            ),
+          );
+        }
+      } else {
+        final respStr = await response.stream.bytesToString();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal mengirim laporan: ${response.statusCode} - $respStr')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   Widget _buildConfirmationStep(BuildContext context) {
