@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 
 import '../../data/datasources/home_remote_data_source.dart';
@@ -21,12 +22,16 @@ class _HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  final MapController _mapController = MapController();
+  LatLng? _deviceLocation;
+  bool _isLocating = false;
 
   @override
   void initState() {
     super.initState();
     _controller = HomeController(HomeRepository(HomeRemoteDataSource()));
     _controller.load();
+    _requestAndFetchLocation();
   }
 
   @override
@@ -50,12 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildPlaceholderTab(context, 'Profil'),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/report/create');
-        },
-        child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -139,6 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return Stack(
                       children: [
                         FlutterMap(
+                          mapController: _mapController,
                           options: MapOptions(
                             initialCenter: _resolveInitialCenter(locations),
                             initialZoom: 13.2,
@@ -152,6 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$mapTilerKey',
                               userAgentPackageName: 'id.sleman.akses',
                             ),
+                            if (_deviceLocation != null)
+                              MarkerLayer(markers: [_buildDeviceMarker()]),
                             MarkerLayer(
                               markers: _buildMarkers(
                                 context,
@@ -170,6 +172,52 @@ class _HomeScreenState extends State<HomeScreen> {
                               _buildSearchRow(context),
                               const SizedBox(height: 12),
                               _buildCategoryChips(context, categories),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          right: 16,
+                          bottom: 16,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              FloatingActionButton.small(
+                                heroTag: 'fab-location',
+                                backgroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                onPressed: () {
+                                  _requestAndFetchLocation(moveCamera: true);
+                                },
+                                child: _isLocating
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: AppTheme.primary,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.my_location,
+                                        color: AppTheme.primary,
+                                      ),
+                              ),
+                              const SizedBox(height: 12),
+                              FloatingActionButton(
+                                heroTag: 'fab-report',
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                onPressed: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/report/create',
+                                  );
+                                },
+                                child: const Icon(Icons.add),
+                              ),
                             ],
                           ),
                         ),
@@ -381,6 +429,83 @@ class _HomeScreenState extends State<HomeScreen> {
         },
       ),
     );
+  }
+
+  Marker _buildDeviceMarker() {
+    final location = _deviceLocation ?? const LatLng(0, 0);
+    return Marker(
+      point: location,
+      width: 46,
+      height: 46,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppTheme.primary.withOpacity(0.15),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppTheme.primary, width: 2),
+        ),
+        child: const Icon(Icons.navigation, color: AppTheme.primary, size: 22),
+      ),
+    );
+  }
+
+  Future<void> _requestAndFetchLocation({bool moveCamera = false}) async {
+    if (_isLocating) {
+      return;
+    }
+
+    setState(() {
+      _isLocating = true;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _showLocationError('Aktifkan layanan lokasi untuk melihat posisi.');
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _showLocationError('Izin lokasi ditolak.');
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final location = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _deviceLocation = location;
+      });
+
+      if (moveCamera) {
+        _mapController.move(location, 16.5);
+      }
+    } catch (_) {
+      _showLocationError('Gagal mengambil lokasi perangkat.');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
+  void _showLocationError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showLocationDetails(BuildContext context, MapLocation location) {
