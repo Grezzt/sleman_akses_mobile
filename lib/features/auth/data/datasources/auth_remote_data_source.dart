@@ -39,6 +39,16 @@ class AuthRemoteDataSource {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> getProfile() async {
+    ApiClient.ensureBaseUrl();
+    final response = await ApiClient.client.get(
+      Uri.parse('${ApiClient.baseUrl}/profile'),
+      headers: ApiClient.headers,
+    );
+
+    return _handleResponse(response);
+  }
+
   Future<void> logout() async {
     ApiClient.ensureBaseUrl();
     final response = await ApiClient.client.post(

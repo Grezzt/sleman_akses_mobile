@@ -81,6 +81,23 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  Future<void> fetchProfile() async {
+    _setLoading(true);
+    _clearErrors();
+    try {
+      final user = await _repository.getProfile();
+      _user = user;
+      notifyListeners();
+    } on ApiException catch (error) {
+      _errorMessage = error.message;
+      _fieldErrors = error.fieldErrors;
+    } catch (e) {
+      _errorMessage = 'Gagal mengambil profil';
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   Future<void> logout() async {
     _setLoading(true);
     try {

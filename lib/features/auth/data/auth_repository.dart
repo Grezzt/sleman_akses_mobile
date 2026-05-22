@@ -49,6 +49,11 @@ class AuthRepository {
     return AuthSession(token: token, user: user);
   }
 
+  Future<UserModel> getProfile() async {
+    final data = await _remote.getProfile();
+    return UserModel.fromJson(data);
+  }
+
   Future<void> logout() {
     return _remote.logout();
   }

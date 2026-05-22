@@ -5,6 +5,9 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 
+import 'package:provider/provider.dart';
+
+import '../../../auth/logic/auth_controller.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/home_repository.dart';
 import '../../data/models/facility_category.dart';
@@ -34,6 +37,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _controller = HomeController(HomeRepository(HomeRemoteDataSource()));
     _controller.load();
     _requestAndFetchLocation();
+
+    // Fetch profile data
+    Future.microtask(() {
+      if (mounted) {
+        context.read<AuthController>().fetchProfile();
+      }
+    });
   }
 
   @override
@@ -54,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildFacilitiesTab(context),
             _buildPlaceholderTab(context, 'Berita'),
             _buildPlaceholderTab(context, 'Laporan'),
-            _buildPlaceholderTab(context, 'Profil'),
+            _buildProfileTab(context),
           ],
         ),
       ),
@@ -295,13 +305,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         Expanded(
                           child: searchedLocations.isEmpty
-                              ? _buildEmptyState(context, 'Fasilitas tidak ditemukan.')
+                              ? _buildEmptyState(
+                                  context,
+                                  'Fasilitas tidak ditemukan.',
+                                )
                               : ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
                                   itemCount: searchedLocations.length,
                                   itemBuilder: (context, index) {
                                     final location = searchedLocations[index];
-                                    return _buildFacilityCard(context, location);
+                                    return _buildFacilityCard(
+                                      context,
+                                      location,
+                                    );
                                   },
                                 ),
                         ),
@@ -320,7 +339,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildFacilityCard(BuildContext context, MapLocation location) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final photoUrls = location.photoUrl.isNotEmpty ? location.photoUrl.split(',') : [];
+    final photoUrls = location.photoUrl.isNotEmpty
+        ? location.photoUrl.split(',')
+        : [];
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -333,7 +354,9 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: photoUrls.isNotEmpty
@@ -368,7 +391,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       if (location.status.isNotEmpty)
                         _buildBadge(
                           label: _statusLabel(location.status),
-                          background: _statusColor(colorScheme, location.status),
+                          background: _statusColor(
+                            colorScheme,
+                            location.status,
+                          ),
                           foreground: colorScheme.onPrimary,
                         ),
                     ],
@@ -376,12 +402,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 16, color: AppTheme.textMuted),
+                      const Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppTheme.textMuted,
+                      ),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           location.address,
-                          style: textTheme.bodySmall?.copyWith(color: AppTheme.textMuted),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textMuted,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -395,27 +427,36 @@ class _HomeScreenState extends State<HomeScreen> {
                       runSpacing: 8,
                       children: location.facilities
                           .where((f) => f.available)
-                          .map((f) => Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(_resolveFacilityIcon(f.category), size: 14, color: colorScheme.primary),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      f.category,
-                                      style: textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.primary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                          .map(
+                            (f) => Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _resolveFacilityIcon(f.category),
+                                    size: 14,
+                                    color: colorScheme.primary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    f.category,
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                  ],
-                                ),
-                              ))
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
                           .toList(),
                     ),
                 ],
@@ -433,6 +474,279 @@ class _HomeScreenState extends State<HomeScreen> {
       alignment: Alignment.center,
       child: const Icon(Icons.image_not_supported, color: Colors.black54),
     );
+  }
+
+  Widget _buildProfileTab(BuildContext context) {
+    return Consumer<AuthController>(
+      builder: (context, auth, _) {
+        final user = auth.user;
+        final initials = user != null ? _getInitials(user.fullName) : 'U';
+
+        // Default hardcoded stats for now as they are not available in the API
+        final totalDikirim = 12;
+        final totalDisetujui = 10;
+        final totalDitolak = 2;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF3F4F6), // Light grey background
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 40, bottom: 80),
+                      decoration: const BoxDecoration(
+                        color: AppTheme.primary,
+                        borderRadius: BorderRadius.only(
+                          bottomLeft: Radius.circular(32),
+                          bottomRight: Radius.circular(32),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              IconButton(
+                                onPressed: () {
+                                  // Edit profile action
+                                },
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                          ),
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC7DE64), // Lime green
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              initials,
+                              style: const TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            user?.fullName ?? 'Memuat...',
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      bottom: -40,
+                      left: 24,
+                      right: 24,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildStatItem(
+                              totalDikirim.toString(),
+                              'Laporan Dikirim',
+                              AppTheme.primary,
+                            ),
+                            Container(
+                              width: 1,
+                              height: 40,
+                              color: Colors.grey[200],
+                            ),
+                            _buildStatItem(
+                              totalDisetujui.toString(),
+                              'Disetujui',
+                              AppTheme.primary,
+                            ),
+                            Container(
+                              width: 1,
+                              height: 40,
+                              color: Colors.grey[200],
+                            ),
+                            _buildStatItem(
+                              totalDitolak.toString(),
+                              'Ditolak',
+                              AppTheme.primary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 60), // Space for the overlapping card
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildProfileMenuItem(
+                          icon: Icons.person_outline,
+                          title: 'Edit Profil',
+                          iconBgColor: AppTheme.primary.withOpacity(0.1),
+                          iconColor: AppTheme.primary,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1, indent: 64),
+                        _buildProfileMenuItem(
+                          icon: Icons.lock_outline,
+                          title: 'Ubah Kata Sandi',
+                          iconBgColor: AppTheme.primary.withOpacity(0.1),
+                          iconColor: AppTheme.primary,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1, indent: 64),
+                        _buildProfileMenuItem(
+                          icon: Icons.notifications_none,
+                          title: 'Pengaturan Notifikasi',
+                          iconBgColor: AppTheme.primary.withOpacity(0.1),
+                          iconColor: AppTheme.primary,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1, indent: 64),
+                        _buildProfileMenuItem(
+                          icon: Icons.info_outline,
+                          title: 'Tentang Aplikasi',
+                          iconBgColor: AppTheme.primary.withOpacity(0.1),
+                          iconColor: AppTheme.primary,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1, indent: 64),
+                        _buildProfileMenuItem(
+                          icon: Icons.shield_outlined,
+                          title: 'Kebijakan Privasi',
+                          iconBgColor: AppTheme.primary.withOpacity(0.1),
+                          iconColor: AppTheme.primary,
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      await context.read<AuthController>().logout();
+                      if (context.mounted) {
+                        Navigator.of(context).pushReplacementNamed('/login');
+                      }
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.red),
+                    label: const Text(
+                      'Keluar',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(56),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildStatItem(String value, String label, Color valueColor) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildProfileMenuItem({
+    required IconData icon,
+    required String title,
+    required Color iconBgColor,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      onTap: onTap,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppTheme.primary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+    );
+  }
+
+  String _getInitials(String name) {
+    if (name.isEmpty) return 'U';
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.length > 1) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
   }
 
   Widget _buildPlaceholderTab(BuildContext context, String label) {
@@ -802,7 +1116,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 StatefulBuilder(
                   builder: (context, setSheetState) {
-                    final photoUrls = location.photoUrl.isNotEmpty ? location.photoUrl.split(',') : [];
+                    final photoUrls = location.photoUrl.isNotEmpty
+                        ? location.photoUrl.split(',')
+                        : [];
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Stack(
@@ -815,9 +1131,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     onPageChanged: (index) {
                                       setSheetState(() {
                                         // This will only work if we keep track of index, but since we define the variable inside _showLocationDetails (we can't easily without editing above), we can just use a PageController or skip dynamic text and just use an indicator if needed, but actually we can define the variable outside StatefulBuilder.
-                                    // Wait, I will just do a simple PageView without text indicator to keep it extremely simple and avoid rewriting the signature. People can naturally swipe. Or better, let me use a dot indicator by just mapping over it? 
-                                    // Let me just declare a local variable `int currentPhotoIndex = 0;` inside the builder? No, it resets on setState.
-                                    // I'll just use PageView, it's enough.
+                                        // Wait, I will just do a simple PageView without text indicator to keep it extremely simple and avoid rewriting the signature. People can naturally swipe. Or better, let me use a dot indicator by just mapping over it?
+                                        // Let me just declare a local variable `int currentPhotoIndex = 0;` inside the builder? No, it resets on setState.
+                                        // I'll just use PageView, it's enough.
                                       });
                                     },
                                     itemBuilder: (context, index) {
@@ -828,7 +1144,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                           return Container(
                                             color: Colors.black12,
                                             alignment: Alignment.center,
-                                            child: const Icon(Icons.image_not_supported),
+                                            child: const Icon(
+                                              Icons.image_not_supported,
+                                            ),
                                           );
                                         },
                                       );
@@ -837,7 +1155,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 : Container(
                                     color: Colors.black12,
                                     alignment: Alignment.center,
-                                    child: const Icon(Icons.image_not_supported),
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                    ),
                                   ),
                           ),
                           Positioned(
@@ -874,7 +1194,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.black.withOpacity(0.5),
                                       borderRadius: BorderRadius.circular(12),
@@ -882,11 +1205,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Icon(Icons.swipe, color: Colors.white, size: 14),
+                                        const Icon(
+                                          Icons.swipe,
+                                          color: Colors.white,
+                                          size: 14,
+                                        ),
                                         const SizedBox(width: 6),
                                         Text(
                                           'Geser untuk melihat ${photoUrls.length} foto',
-                                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -897,7 +1227,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     );
-                  }
+                  },
                 ),
                 const SizedBox(height: 16),
                 if (location.placeName.isNotEmpty)
