@@ -19,7 +19,7 @@ class SuccessReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
@@ -43,10 +43,12 @@ class SuccessReportScreen extends StatelessWidget {
                 'Sukses menambahkan\nLaporan',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: const Color(0xFF131B2F), // Dark blue/black color from mockup
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                    ),
+                  color: const Color(
+                    0xFF131B2F,
+                  ), // Dark blue/black color from mockup
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -55,22 +57,31 @@ class SuccessReportScreen extends StatelessWidget {
                     children: [
                       SvgPicture.asset(
                         'public/laporan sukses.svg',
-                        height: 280,
                         fit: BoxFit.contain,
+                        height: 220,
                       ),
                       const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE5E7EB), // Light grey matching mockup
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppTheme.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Fasilitas yang Dilaporkan',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
                                     color: AppTheme.primary,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -126,10 +137,7 @@ class SuccessReportScreen extends StatelessWidget {
                 ),
                 child: const Text(
                   'Selesai',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -151,14 +159,16 @@ class SuccessReportScreen extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: isActive ? AppTheme.primary.withOpacity(0.2) : Colors.red.withOpacity(0.1),
+            color: isActive
+                ? AppTheme.secondary.withOpacity(0.2)
+                : Colors.red.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Icon(
               icon,
               size: 24,
-              color: isActive ? AppTheme.primary : Colors.red,
+              color: isActive ? AppTheme.primary : AppTheme.error,
             ),
           ),
         ),
@@ -167,9 +177,9 @@ class SuccessReportScreen extends StatelessWidget {
           child: Text(
             title,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: const Color(0xFF374151), // Gray 700
-                  fontWeight: FontWeight.w500,
-                ),
+              color: const Color(0xFF374151), // Gray 700
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
         Container(

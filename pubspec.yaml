@@ -84,6 +84,7 @@ flutter:
     - public/ramp.png
     - public/toilet-difabel.png
     - public/parkir-difabel.png
+    - public/maskot-nangis.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

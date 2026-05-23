@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
+import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
 
 import 'package:provider/provider.dart';
 
@@ -30,13 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final MapController _mapController = MapController();
   LatLng? _deviceLocation;
   bool _isLocating = false;
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
     _controller = HomeController(HomeRepository(HomeRemoteDataSource()));
     _controller.load();
-    _requestAndFetchLocation();
+    _requestAndFetchLocation(moveCamera: true, zoom: 14.0);
 
     // Fetch profile data
     Future.microtask(() {
@@ -48,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     _controller.dispose();
     super.dispose();
@@ -56,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
@@ -816,7 +821,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   label: Text(label),
                   selected: isSelected,
                   selectedColor: colorScheme.primary,
-                  backgroundColor: Colors.white,
+                  backgroundColor: AppTheme.surface,
+                  checkmarkColor: AppTheme.surface,
                   labelStyle: TextStyle(
                     color: isSelected
                         ? colorScheme.onPrimary
@@ -824,7 +830,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w600,
                   ),
                   shape: const StadiumBorder(
-                    side: BorderSide(color: AppTheme.primary, width: 1),
+                    side: BorderSide(color: AppTheme.surface, width: 0.2),
                   ),
                   onSelected: (_) {
                     _controller.setSelectedCategory(category?.id);
@@ -847,29 +853,45 @@ class _HomeScreenState extends State<HomeScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return locations.map((location) {
-      final markerIcon = _resolveMarkerIcon(location, selectedCategoryName);
+      final iconData = _resolveMarkerIcon(location, selectedCategoryName);
       return Marker(
         point: LatLng(location.latitude, location.longitude),
-        width: 52,
-        height: 52,
-        rotate: false,
+        width: 48,
+        height: 60,
+        rotate: true,
+        alignment: Alignment.topCenter,
         child: GestureDetector(
           onTap: () => _showLocationDetails(context, location),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: colorScheme.primary, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Icon(
+                Icons.location_on,
+                color: colorScheme.primary,
+                size: 48,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              Positioned(
+                top: 7,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(iconData, color: colorScheme.primary, size: 16),
+                  ),
                 ),
-              ],
-            ),
-            child: markerIcon,
+              ),
+            ],
           ),
         ),
       );
@@ -897,8 +919,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
+                if (_debounce?.isActive ?? false) _debounce!.cancel();
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  if (mounted) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  }
                 });
               },
               decoration: const InputDecoration(
@@ -934,7 +961,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _resolveMarkerIcon(MapLocation location, String selectedCategoryName) {
+  IconData _resolveMarkerIcon(
+    MapLocation location,
+    String selectedCategoryName,
+  ) {
     MapFacility? selectedFacility;
     if (selectedCategoryName.isNotEmpty) {
       selectedFacility = location.facilities.firstWhere(
@@ -962,8 +992,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
         );
 
-    final iconData = _resolveFacilityIcon(preferredFacility.category);
-    return Icon(iconData, color: AppTheme.primary, size: 26);
+    return _resolveFacilityIcon(preferredFacility.category);
   }
 
   String _resolveSelectedCategoryName(List<FacilityCategory> categories) {
@@ -1022,7 +1051,8 @@ class _HomeScreenState extends State<HomeScreen> {
       point: location,
       width: 46,
       height: 46,
-      rotate: false,
+      rotate: true,
+      alignment: Alignment.center,
       child: Container(
         decoration: BoxDecoration(
           color: AppTheme.primary.withOpacity(0.15),
@@ -1034,7 +1064,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _requestAndFetchLocation({bool moveCamera = false}) async {
+  Future<void> _requestAndFetchLocation({
+    bool moveCamera = false,
+    double? zoom,
+  }) async {
     if (_isLocating) {
       return;
     }
@@ -1071,7 +1104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
 
       if (moveCamera) {
-        _mapController.move(location, 16.5);
+        _mapController.move(location, zoom ?? 16.5);
       }
     } catch (_) {
       _showLocationError('Gagal mengambil lokasi perangkat.');
@@ -1089,9 +1122,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    showDialog(
+      context: context,
+      builder: (context) => SystemResponseDialog.error(
+        title: 'Lokasi Error',
+        description: message,
+        onButtonPressed: () => Navigator.pop(context),
+      ),
+    );
   }
 
   void _showLocationDetails(BuildContext context, MapLocation location) {

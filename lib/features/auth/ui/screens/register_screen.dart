@@ -5,6 +5,7 @@ import 'package:sleman_akses_mobile/app.dart';
 
 import '../../logic/auth_controller.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/system_response_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -51,9 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (success) {
       Navigator.pushReplacementNamed(context, '/home');
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
+      showDialog(
+        context: context,
+        builder: (context) => SystemResponseDialog.error(
+          title: 'Yahh Daftar Gagal!',
+          description: auth.errorMessage!,
+          onButtonPressed: () => Navigator.pop(context),
+        ),
+      );
     }
   }
 
@@ -104,9 +110,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _confirmController.text == _passwordController.text;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE8ECE4),
+      backgroundColor: AppTheme.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFE8ECE4),
+        backgroundColor: AppTheme.surface,
         elevation: 0,
         centerTitle: true,
         title: Text(
@@ -119,34 +125,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         iconTheme: const IconThemeData(color: AppTheme.primary),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Bergabunglah dengan komunitas inklusif kami untuk akses fasilitas yang lebih mudah.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textMuted,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.left,
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'public/register asset.svg',
-                    width: 210,
-                    height: 210,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Bergabunglah dengan komunitas inklusif kami untuk akses fasilitas yang lebih mudah.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textMuted,
+                        height: 1.5,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Center(
+                        child: SvgPicture.asset(
+                          'public/register asset.svg',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
               Form(
                 key: _formKey,
                 child: Column(
@@ -386,8 +391,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

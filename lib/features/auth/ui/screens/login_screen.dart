@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../logic/auth_controller.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/system_response_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,9 +44,14 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success) {
       Navigator.pushReplacementNamed(context, '/home');
     } else if (auth.errorMessage != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
+      showDialog(
+        context: context,
+        builder: (context) => SystemResponseDialog.error(
+          title: 'Yahh Login Gagal!',
+          description: auth.errorMessage!,
+          onButtonPressed: () => Navigator.pop(context),
+        ),
+      );
     }
   }
 

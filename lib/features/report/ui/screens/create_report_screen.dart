@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/system_response_dialog.dart';
 import 'success_report_screen.dart';
 
 class CreateReportScreen extends StatefulWidget {
@@ -149,6 +150,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
@@ -181,7 +183,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
             child: LinearProgressIndicator(
               value: (_currentStep + 1) / 3,
               minHeight: 10,
-              backgroundColor: const Color(0xFFF5E3C7),
+              backgroundColor: AppTheme.textMuted,
               valueColor: AlwaysStoppedAnimation<Color>(colorScheme.secondary),
             ),
           ),
@@ -223,7 +225,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         Text(
           'Konfirmasi titik\nlokasi',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textOnsurface,
             fontWeight: FontWeight.w800,
           ),
           textAlign: TextAlign.center,
@@ -231,7 +233,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         const Spacer(),
         SvgPicture.asset(
           'public/konfirmasi-titik-lokasi-unactive.svg',
-          height: 220,
+          fit: BoxFit.contain,
         ),
         const Spacer(),
         _buildLocationStatusCard(
@@ -262,7 +264,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         Text(
           'Konfirmasi titik\nlokasi',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textPrimary,
+            color: AppTheme.textOnsurface,
             fontWeight: FontWeight.w800,
           ),
           textAlign: TextAlign.center,
@@ -270,7 +272,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         const Spacer(),
         SvgPicture.asset(
           'public/konfirmasi titik lokasi aktif.svg',
-          height: 220,
+          fit: BoxFit.contain,
         ),
         const Spacer(),
         _buildLocationStatusCard(
@@ -300,7 +302,10 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
                 )
               : const Text('Kirim laporan'),
         ),
@@ -345,8 +350,8 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                 });
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: AppTheme.surface,
+                backgroundColor: AppTheme.secondary,
+                foregroundColor: AppTheme.textPrimary,
               ),
               child: const Text('Lanjut'),
             ),
@@ -606,7 +611,9 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     final bytes = utf8.encode(signatureString);
     final signature = sha1.convert(bytes).toString();
 
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
     final request = http.MultipartRequest('POST', uri)
       ..fields['api_key'] = apiKey
       ..fields['timestamp'] = timestamp.toString()
@@ -660,10 +667,14 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       request.fields['categories[1][available]'] = _hasElevator ? '1' : '0';
 
       request.fields['categories[2][id]'] = '2';
-      request.fields['categories[2][available]'] = _hasDisabledToilet ? '1' : '0';
+      request.fields['categories[2][available]'] = _hasDisabledToilet
+          ? '1'
+          : '0';
 
       request.fields['categories[3][id]'] = '3';
-      request.fields['categories[3][available]'] = _hasDisabledParking ? '1' : '0';
+      request.fields['categories[3][available]'] = _hasDisabledParking
+          ? '1'
+          : '0';
 
       request.fields['photo_url'] = uploadedUrls.join(',');
 
@@ -686,15 +697,25 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       } else {
         final respStr = await response.stream.bytesToString();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal mengirim laporan: ${response.statusCode} - $respStr')),
+          showDialog(
+            context: context,
+            builder: (context) => SystemResponseDialog.error(
+              title: 'Gagal Kirim Laporan',
+              description: 'Status: ${response.statusCode}\n$respStr',
+              onButtonPressed: () => Navigator.pop(context),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        showDialog(
+          context: context,
+          builder: (context) => SystemResponseDialog.error(
+            title: 'Terjadi Kesalahan',
+            description: e.toString(),
+            onButtonPressed: () => Navigator.pop(context),
+          ),
         );
       }
     } finally {
@@ -778,8 +799,16 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFEAEAEA),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppTheme.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
