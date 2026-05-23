@@ -21,34 +21,75 @@ class CreateReportScreen extends StatefulWidget {
   State<CreateReportScreen> createState() => _CreateReportScreenState();
 }
 
+class ReportDraft {
+  static final ReportDraft _instance = ReportDraft._internal();
+  factory ReportDraft() => _instance;
+  ReportDraft._internal();
+
+  int currentStep = 0;
+  Position? position;
+  final List<XFile> photos = [];
+  bool hasRamp = false;
+  bool hasElevator = false;
+  bool hasDisabledToilet = false;
+  bool hasDisabledParking = false;
+
+  void clear() {
+    currentStep = 0;
+    position = null;
+    photos.clear();
+    hasRamp = false;
+    hasElevator = false;
+    hasDisabledToilet = false;
+    hasDisabledParking = false;
+  }
+}
+
 class _CreateReportScreenState extends State<CreateReportScreen> {
-  int _currentStep = 0;
+  final ReportDraft _draft = ReportDraft();
+
   bool _isCheckingLocation = false;
   bool _serviceEnabled = false;
   LocationPermission _permission = LocationPermission.denied;
-  Position? _position;
   final ImagePicker _imagePicker = ImagePicker();
-  final List<XFile> _photos = [];
-
-  bool _hasRamp = false;
-  bool _hasElevator = false;
-  bool _hasDisabledToilet = false;
-  bool _hasDisabledParking = false;
   bool _isSubmitting = false;
+
+  int get _currentStep => _draft.currentStep;
+  set _currentStep(int value) => _draft.currentStep = value;
+
+  Position? get _position => _draft.position;
+  set _position(Position? value) => _draft.position = value;
+
+  List<XFile> get _photos => _draft.photos;
+
+  bool get _hasRamp => _draft.hasRamp;
+  set _hasRamp(bool value) => _draft.hasRamp = value;
+
+  bool get _hasElevator => _draft.hasElevator;
+  set _hasElevator(bool value) => _draft.hasElevator = value;
+
+  bool get _hasDisabledToilet => _draft.hasDisabledToilet;
+  set _hasDisabledToilet(bool value) => _draft.hasDisabledToilet = value;
+
+  bool get _hasDisabledParking => _draft.hasDisabledParking;
+  set _hasDisabledParking(bool value) => _draft.hasDisabledParking = value;
+
 
   @override
   void initState() {
     super.initState();
-    _checkLocationState();
+    if (_position == null) {
+      _checkLocationState();
+    }
   }
 
   Future<void> _pickPhotos() async {
-    final picked = await _imagePicker.pickMultiImage();
-    if (picked.isEmpty) {
+    final picked = await _imagePicker.pickImage(source: ImageSource.camera);
+    if (picked == null) {
       return;
     }
     setState(() {
-      _photos.addAll(picked);
+      _photos.add(picked);
     });
   }
 
@@ -149,7 +190,15 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: _currentStep == 0,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        setState(() {
+          _currentStep--;
+        });
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.surface,
       body: SafeArea(
         child: Padding(
@@ -166,7 +215,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildTopBar(BuildContext context) {
@@ -175,7 +224,15 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       children: [
         IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (_currentStep > 0) {
+              setState(() {
+                _currentStep--;
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
         Expanded(
           child: ClipRRect(
@@ -290,25 +347,76 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   Widget _buildFooterAction(BuildContext context) {
     final isStepThree = _currentStep == 2;
     if (isStepThree) {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: _isSubmitting ? null : _submitReport,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            foregroundColor: AppTheme.surface,
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppTheme.border,
+                  offset: Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _isSubmitting
+                  ? null
+                  : () {
+                      setState(() {
+                        _currentStep = 1;
+                      });
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.surface,
+                foregroundColor: AppTheme.textPrimary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              child: const Text('Kembali Tambah Foto', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
           ),
-          child: _isSubmitting
-              ? const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
-              : const Text('Kirim laporan'),
-        ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppTheme.secondary,
+                  offset: Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: _isSubmitting ? null : _submitReport,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primary,
+                foregroundColor: AppTheme.surface,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('Kirim laporan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
       );
     }
 
@@ -320,40 +428,74 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ElevatedButton(
-            onPressed: isNextEnabled
-                ? () {
-                    if (_currentStep == 0) {
-                      setState(() {
-                        _currentStep = 1;
-                      });
-                      return;
-                    }
-                    if (_currentStep == 1) {
-                      _pickPhotos();
-                      return;
-                    }
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              foregroundColor: AppTheme.surface,
-              backgroundColor: AppTheme.primary,
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppTheme.secondary,
+                  offset: Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
             ),
-            child: Text(label),
+            child: ElevatedButton(
+              onPressed: isNextEnabled
+                  ? () {
+                      if (_currentStep == 0) {
+                        setState(() {
+                          _currentStep = 1;
+                        });
+                        return;
+                      }
+                      if (_currentStep == 1) {
+                        _pickPhotos();
+                        return;
+                      }
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: AppTheme.surface,
+                backgroundColor: AppTheme.primary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
           ),
           if (isStepTwo && _photos.isNotEmpty) ...[
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _currentStep = 2;
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondary,
-                foregroundColor: AppTheme.textPrimary,
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppTheme.primary,
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
+                ],
               ),
-              child: const Text('Lanjut'),
+              child: ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _currentStep = 2;
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondary,
+                  foregroundColor: AppTheme.textPrimary,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                ),
+                child: const Text('Lanjut', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
             ),
           ],
         ],
@@ -469,14 +611,13 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppTheme.border,
+            blurRadius: 0,
+            offset: Offset(4, 4),
           ),
         ],
       ),
@@ -529,14 +670,13 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: AppTheme.border,
+            blurRadius: 0,
+            offset: Offset(4, 4),
           ),
         ],
       ),
@@ -634,6 +774,12 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       _isSubmitting = true;
     });
 
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => SystemResponseDialog.loading(),
+    );
+
     try {
       List<String> uploadedUrls = [];
       for (var photo in _photos) {
@@ -682,6 +828,8 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (mounted) {
+          _draft.clear(); // Clear the draft upon success
+          Navigator.pop(context); // Dismiss loading dialog
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -697,6 +845,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       } else {
         final respStr = await response.stream.bytesToString();
         if (mounted) {
+          Navigator.pop(context); // Dismiss loading dialog
           showDialog(
             context: context,
             builder: (context) => SystemResponseDialog.error(
@@ -709,6 +858,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       }
     } catch (e) {
       if (mounted) {
+        Navigator.pop(context); // Dismiss loading dialog
         showDialog(
           context: context,
           builder: (context) => SystemResponseDialog.error(
@@ -799,14 +949,13 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppTheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.border),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: AppTheme.border,
+                  blurRadius: 0,
+                  offset: Offset(4, 4),
                 ),
               ],
             ),
@@ -852,14 +1001,14 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       width: 140,
       height: 140,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white, width: 4),
-        boxShadow: [
+        border: Border.all(color: AppTheme.surface, width: 4),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppTheme.border,
+            blurRadius: 0,
+            offset: Offset(4, 4),
           ),
         ],
       ),
@@ -882,7 +1031,7 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
       data: Theme.of(context).copyWith(
         checkboxTheme: CheckboxThemeData(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-          side: const BorderSide(color: Colors.grey, width: 1.5),
+          side: const BorderSide(color: AppTheme.border, width: 1.5),
         ),
       ),
       child: CheckboxListTile(

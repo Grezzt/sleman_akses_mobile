@@ -64,14 +64,13 @@ class SuccessReportScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTheme.surface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.border),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              color: AppTheme.border,
+                              blurRadius: 0,
+                              offset: Offset(4, 4),
                             ),
                           ],
                         ),
@@ -122,22 +121,36 @@ class SuccessReportScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate back to the home screen
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: AppTheme.surface,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: AppTheme.secondary,
+                      offset: Offset(4, 4),
+                      blurRadius: 0,
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  'Selesai',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Navigate back to the home screen
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: AppTheme.surface,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                  ),
+                  child: const Text(
+                    'Selesai',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],
@@ -161,7 +174,7 @@ class SuccessReportScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive
                 ? AppTheme.secondary.withOpacity(0.2)
-                : Colors.red.withOpacity(0.1),
+                : AppTheme.error.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -186,7 +199,7 @@ class SuccessReportScreen extends StatelessWidget {
           width: 12,
           height: 12,
           decoration: BoxDecoration(
-            color: isActive ? AppTheme.primary : Colors.red,
+            color: isActive ? AppTheme.primary : AppTheme.error,
             shape: BoxShape.circle,
           ),
         ),

@@ -230,18 +230,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                               ),
                               const SizedBox(height: 12),
-                              FloatingActionButton(
-                                heroTag: 'fab-report',
-                                shape: RoundedRectangleBorder(
+                              Container(
+                                decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(16),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: AppTheme.secondary,
+                                      blurRadius: 0,
+                                      offset: Offset(4, 4),
+                                    ),
+                                  ],
                                 ),
-                                onPressed: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/report/create',
-                                  );
-                                },
-                                child: const Icon(Icons.add),
+                                child: FloatingActionButton(
+                                  heroTag: 'fab-report',
+                                  elevation: 0,
+                                  backgroundColor: AppTheme.primary,
+                                  foregroundColor: AppTheme.surface,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/report/create',
+                                    );
+                                  },
+                                  child: const Icon(Icons.add),
+                                ),
                               ),
                             ],
                           ),
@@ -348,126 +363,141 @@ class _HomeScreenState extends State<HomeScreen> {
         ? location.photoUrl.split(',')
         : [];
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: InkWell(
-        onTap: () => _showLocationDetails(context, location),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: AppTheme.border,
+            offset: Offset(4, 4),
+            blurRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showLocationDetails(context, location),
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: photoUrls.isNotEmpty
+                      ? Image.network(
+                          photoUrls[0].trim(),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              _buildPlaceholderImage(),
+                        )
+                      : _buildPlaceholderImage(),
+                ),
               ),
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: photoUrls.isNotEmpty
-                    ? Image.network(
-                        photoUrls[0].trim(),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildPlaceholderImage(),
-                      )
-                    : _buildPlaceholderImage(),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          location.placeName,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.primary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (location.status.isNotEmpty)
-                        _buildBadge(
-                          label: _statusLabel(location.status),
-                          background: _statusColor(
-                            colorScheme,
-                            location.status,
-                          ),
-                          foreground: colorScheme.onPrimary,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 16,
-                        color: AppTheme.textMuted,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          location.address,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textMuted,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (location.facilities.where((f) => f.available).isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: location.facilities
-                          .where((f) => f.available)
-                          .map(
-                            (f) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    _resolveFacilityIcon(f.category),
-                                    size: 14,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    f.category,
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            location.placeName,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.primary,
                             ),
-                          )
-                          .toList(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (location.status.isNotEmpty)
+                          _buildBadge(
+                            label: _statusLabel(location.status),
+                            background: _statusColor(
+                              colorScheme,
+                              location.status,
+                            ),
+                            foreground: colorScheme.onPrimary,
+                          ),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: AppTheme.textMuted,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            location.address,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textMuted,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (location.facilities
+                        .where((f) => f.available)
+                        .isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: location.facilities
+                            .where((f) => f.available)
+                            .map(
+                              (f) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _resolveFacilityIcon(f.category),
+                                      size: 14,
+                                      color: colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      f.category,
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -566,13 +596,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: AppTheme.surface,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              color: AppTheme.border,
+                              blurRadius: 0,
+                              offset: Offset(4, 4),
                             ),
                           ],
                         ),
@@ -817,25 +847,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(label),
-                  selected: isSelected,
-                  selectedColor: colorScheme.primary,
-                  backgroundColor: AppTheme.surface,
-                  checkmarkColor: AppTheme.surface,
-                  labelStyle: TextStyle(
-                    color: isSelected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: isSelected
+                        ? const [
+                            BoxShadow(
+                              color: AppTheme.secondary,
+                              offset: Offset(4, 4),
+                              blurRadius: 0,
+                            ),
+                          ]
+                        : null,
                   ),
-                  shape: const StadiumBorder(
-                    side: BorderSide(color: AppTheme.surface, width: 0.2),
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    selectedColor: colorScheme.primary,
+                    backgroundColor: AppTheme.surface,
+                    checkmarkColor: AppTheme.surface,
+                    elevation: 0,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    shape: const StadiumBorder(
+                      side: BorderSide(color: Colors.transparent, width: 0),
+                    ),
+                    onSelected: (_) {
+                      _controller.setSelectedCategory(category?.id);
+                      setState(() {});
+                    },
                   ),
-                  onSelected: (_) {
-                    _controller.setSelectedCategory(category?.id);
-                    setState(() {});
-                  },
                 ),
               );
             }).toList(),
@@ -1348,9 +1393,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: isAvailable ? AppTheme.secondary : AppTheme.surface,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isAvailable ? AppTheme.primary : AppTheme.border,
+                              offset: const Offset(4, 4),
+                              blurRadius: 0,
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
@@ -1371,18 +1422,29 @@ class _HomeScreenState extends State<HomeScreen> {
                     }).toList(),
                   ),
                 const SizedBox(height: 20),
-                SizedBox(
+                Container(
                   width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(26),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppTheme.secondary,
+                        offset: Offset(4, 4),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
                   child: ElevatedButton.icon(
                     onPressed: () {},
                     icon: const Icon(Icons.navigation),
                     label: const Text('Rute Navigasi'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      foregroundColor: colorScheme.onPrimary,
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: AppTheme.surface,
+                      elevation: 0,
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(26),
                       ),
                     ),
                   ),

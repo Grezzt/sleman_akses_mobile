@@ -7,11 +7,13 @@ class SystemResponseDialog extends StatelessWidget {
   final String title;
   final String description;
   final String buttonText;
+  final bool isLoading;
   final VoidCallback onButtonPressed;
 
   const SystemResponseDialog({
     Key? key,
     required this.isSuccess,
+    this.isLoading = false,
     required this.title,
     required this.description,
     required this.buttonText,
@@ -48,6 +50,20 @@ class SystemResponseDialog extends StatelessWidget {
     );
   }
 
+  factory SystemResponseDialog.loading({
+    String title = 'Sedang Mengunggah...',
+    String description = 'Tunggu sebentar yaa, laporan Anda sedang dikirim.',
+  }) {
+    return SystemResponseDialog(
+      isSuccess: true,
+      isLoading: true,
+      title: title,
+      description: description,
+      buttonText: '',
+      onButtonPressed: () {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Detect screen width to make layout responsive
@@ -63,14 +79,10 @@ class SystemResponseDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFF1F2937),
-            width: 3,
-          ), // Dark border
           boxShadow: const [
             BoxShadow(
-              color: Color(0xFF1F2937), // Solid dark shadow
-              offset: Offset(6, 6),
+              color: AppTheme.border, // changed from dark shadow to gray
+              offset: Offset(4, 4),
               blurRadius: 0,
             ),
           ],
@@ -132,35 +144,49 @@ class SystemResponseDialog extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0xFFD1D5DB), // gray shadow for button
-                offset: Offset(4, 4),
-                blurRadius: 0,
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: onButtonPressed,
-            style: ElevatedButton.styleFrom(
-              minimumSize: Size.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              backgroundColor: AppTheme.secondary,
-              foregroundColor: AppTheme.primary,
-              elevation: 0,
+        if (isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: CircularProgressIndicator(color: AppTheme.primary),
             ),
-            child: Text(
-              buttonText,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: const [
+                BoxShadow(
+                  color: AppTheme.secondary, // use secondary shadow
+                  offset: Offset(4, 4),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: ElevatedButton(
+              onPressed: onButtonPressed,
+              style: ElevatedButton.styleFrom(
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                backgroundColor: AppTheme.primary, // changed to primary button
+                foregroundColor: AppTheme.surface,
+                elevation: 0,
+              ),
+              child: Text(
+                buttonText,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
