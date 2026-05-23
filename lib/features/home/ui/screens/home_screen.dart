@@ -421,8 +421,7 @@ class HomeScreenState extends State<HomeScreen> {
                       ? CachedNetworkImage(
                           imageUrl: photoUrls[0].trim(),
                           fit: BoxFit.cover,
-                          errorWidget: (_, __, ___) =>
-                              _buildPlaceholderImage(),
+                          errorWidget: (_, __, ___) => _buildPlaceholderImage(),
                         )
                       : _buildPlaceholderImage(),
                 ),
@@ -540,7 +539,17 @@ class HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPlaceholderTab(BuildContext context, String label) {
     return Center(
-      child: Text(label, style: Theme.of(context).textTheme.titleLarge),
+      child: SystemResponseDialog.success(
+        title: 'Segera Hadir!',
+        description: 'Fitur $label sedang dalam tahap pengembangan.',
+        buttonText: 'Kembali ke Beranda',
+        imagePath: 'public/maskot-genit.svg',
+        onButtonPressed: () {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        },
+      ),
     );
   }
 
@@ -1263,7 +1272,8 @@ class HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => FacilityDetailScreen(location: location),
+                          builder: (_) =>
+                              FacilityDetailScreen(location: location),
                         ),
                       );
                     },
