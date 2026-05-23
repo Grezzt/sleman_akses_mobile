@@ -9,6 +9,7 @@ class SystemResponseDialog extends StatelessWidget {
   final String buttonText;
   final bool isLoading;
   final String? imagePath;
+  final Color? shadowColor;
   final VoidCallback onButtonPressed;
 
   const SystemResponseDialog({
@@ -19,6 +20,7 @@ class SystemResponseDialog extends StatelessWidget {
     required this.description,
     required this.buttonText,
     this.imagePath,
+    this.shadowColor,
     required this.onButtonPressed,
   }) : super(key: key);
 
@@ -27,6 +29,7 @@ class SystemResponseDialog extends StatelessWidget {
     required String description,
     String buttonText = 'Lanjutkan',
     String? imagePath,
+    Color? shadowColor,
     required VoidCallback onButtonPressed,
   }) {
     return SystemResponseDialog(
@@ -35,6 +38,7 @@ class SystemResponseDialog extends StatelessWidget {
       description: description,
       buttonText: buttonText,
       imagePath: imagePath,
+      shadowColor: shadowColor,
       onButtonPressed: onButtonPressed,
     );
   }
@@ -44,6 +48,7 @@ class SystemResponseDialog extends StatelessWidget {
     required String description,
     String buttonText = 'Kembali',
     String? imagePath,
+    Color? shadowColor,
     required VoidCallback onButtonPressed,
   }) {
     return SystemResponseDialog(
@@ -52,6 +57,7 @@ class SystemResponseDialog extends StatelessWidget {
       description: description,
       buttonText: buttonText,
       imagePath: imagePath,
+      shadowColor: shadowColor,
       onButtonPressed: onButtonPressed,
     );
   }
@@ -60,6 +66,7 @@ class SystemResponseDialog extends StatelessWidget {
     String title = 'Sedang Mengunggah...',
     String description = 'Tunggu sebentar yaa, laporan Anda sedang dikirim.',
     String? imagePath,
+    Color? shadowColor,
   }) {
     return SystemResponseDialog(
       isSuccess: true,
@@ -68,6 +75,7 @@ class SystemResponseDialog extends StatelessWidget {
       description: description,
       buttonText: '',
       imagePath: imagePath,
+      shadowColor: shadowColor,
       onButtonPressed: () {},
     );
   }
@@ -87,10 +95,10 @@ class SystemResponseDialog extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: AppTheme.border, // changed from dark shadow to gray
-              offset: Offset(4, 4),
+              color: shadowColor ?? AppTheme.border, // changed from dark shadow to gray
+              offset: const Offset(4, 4),
               blurRadius: 0,
             ),
           ],

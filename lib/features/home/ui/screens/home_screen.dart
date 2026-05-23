@@ -544,6 +544,7 @@ class HomeScreenState extends State<HomeScreen> {
         description: 'Fitur $label sedang dalam tahap pengembangan.',
         buttonText: 'Kembali ke Beranda',
         imagePath: 'public/maskot-genit.svg',
+        shadowColor: AppTheme.textOnsurface,
         onButtonPressed: () {
           setState(() {
             _selectedIndex = 0;
