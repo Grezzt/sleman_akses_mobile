@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/system_response_dialog.dart';
@@ -132,99 +133,107 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         builder: (context, profile, _) {
           return Form(
             key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                if (profile.updateErrorMessage != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.shade200),
-                    ),
-                    child: Text(
-                      profile.updateErrorMessage!,
-                      style: TextStyle(color: Colors.red.shade700),
-                    ),
-                  ),
-                _buildPasswordField(
-                  'Kata Sandi Saat Ini',
-                  _currentPasswordController,
-                  _obscureCurrent,
-                  () => setState(() => _obscureCurrent = !_obscureCurrent),
-                  profile.fieldError('current_password'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Kata sandi saat ini harus diisi';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildPasswordField(
-                  'Kata Sandi Baru',
-                  _newPasswordController,
-                  _obscureNew,
-                  () => setState(() => _obscureNew = !_obscureNew),
-                  profile.fieldError('new_password'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Kata sandi baru harus diisi';
-                    }
-                    if (value.length < 8) {
-                      return 'Kata sandi minimal 8 karakter';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                _buildPasswordField(
-                  'Konfirmasi Kata Sandi Baru',
-                  _confirmPasswordController,
-                  _obscureConfirm,
-                  () => setState(() => _obscureConfirm = !_obscureConfirm),
-                  profile.fieldError('new_password_confirmation'),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Konfirmasi kata sandi harus diisi';
-                    }
-                    if (value != _newPasswordController.text) {
-                      return 'Konfirmasi tidak cocok dengan kata sandi baru';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: profile.isUpdating ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(56),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  child: profile.isUpdating
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'Simpan Kata Sandi',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SvgPicture.asset('public/maskot-side-eye.svg', height: 240),
+                    const SizedBox(height: 32),
+                    if (profile.updateErrorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
                         ),
+                        child: Text(
+                          profile.updateErrorMessage!,
+                          style: TextStyle(color: Colors.red.shade700),
+                        ),
+                      ),
+                    _buildPasswordField(
+                      'Kata Sandi Saat Ini',
+                      _currentPasswordController,
+                      _obscureCurrent,
+                      () => setState(() => _obscureCurrent = !_obscureCurrent),
+                      profile.fieldError('current_password'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Kata sandi saat ini harus diisi';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildPasswordField(
+                      'Kata Sandi Baru',
+                      _newPasswordController,
+                      _obscureNew,
+                      () => setState(() => _obscureNew = !_obscureNew),
+                      profile.fieldError('new_password'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Kata sandi baru harus diisi';
+                        }
+                        if (value.length < 8) {
+                          return 'Kata sandi minimal 8 karakter';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildPasswordField(
+                      'Konfirmasi Kata Sandi Baru',
+                      _confirmPasswordController,
+                      _obscureConfirm,
+                      () => setState(() => _obscureConfirm = !_obscureConfirm),
+                      profile.fieldError('new_password_confirmation'),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Konfirmasi kata sandi harus diisi';
+                        }
+                        if (value != _newPasswordController.text) {
+                          return 'Konfirmasi tidak cocok dengan kata sandi baru';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: profile.isUpdating ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(56),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                      ),
+                      child: profile.isUpdating
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Simpan Kata Sandi',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         },
