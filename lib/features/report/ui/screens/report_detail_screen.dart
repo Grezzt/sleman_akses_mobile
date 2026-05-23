@@ -3,6 +3,9 @@ import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
 import 'package:sleman_akses_mobile/features/home/ui/screens/home_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ReportDetailScreen extends StatelessWidget {
   final Map<String, dynamic> report;
@@ -242,7 +245,10 @@ class ReportDetailScreen extends StatelessWidget {
                 children: [
                   _buildInfoRow('Tanggal', dateString, isBold: true),
                   const Divider(height: 24, color: AppTheme.border),
-                  _buildInfoRow('Koordinat GPS', coordsString, isBold: true),
+                  if (latitude != null && longitude != null)
+                    _buildMapMinimap(latitude, longitude)
+                  else
+                    _buildInfoRow('Koordinat GPS', coordsString, isBold: true),
                 ],
               ),
             ),
@@ -484,6 +490,63 @@ class ReportDetailScreen extends StatelessWidget {
         color: Colors.black54,
         size: 40,
       ),
+    );
+  }
+
+  Widget _buildMapMinimap(double lat, double lng) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Koordinat GPS',
+          style: TextStyle(
+            color: AppTheme.textMuted,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 150,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: LatLng(lat, lng),
+                initialZoom: 16.0,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${dotenv.env['MAPTILER_KEY'] ?? ''}',
+                  userAgentPackageName: 'id.sleman.akses',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(lat, lng),
+                      width: 40,
+                      height: 40,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: AppTheme.primary,
+                        size: 40,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

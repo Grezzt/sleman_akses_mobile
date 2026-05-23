@@ -74,7 +74,6 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
   bool get _hasDisabledParking => _draft.hasDisabledParking;
   set _hasDisabledParking(bool value) => _draft.hasDisabledParking = value;
 
-
   @override
   void initState() {
     super.initState();
@@ -199,23 +198,24 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
         });
       },
       child: Scaffold(
-      backgroundColor: AppTheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTopBar(context),
-              const SizedBox(height: 28),
-              Expanded(child: _buildStepContent(context)),
-              const SizedBox(height: 16),
-              _buildFooterAction(context),
-            ],
+        backgroundColor: AppTheme.surface,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTopBar(context),
+                const SizedBox(height: 28),
+                Expanded(child: _buildStepContent(context)),
+                const SizedBox(height: 16),
+                _buildFooterAction(context),
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildTopBar(BuildContext context) {
@@ -378,7 +378,10 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                   borderRadius: BorderRadius.circular(26),
                 ),
               ),
-              child: const Text('Kembali Tambah Foto', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Kembali Tambah Foto',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
             ),
           ),
           const SizedBox(height: 12),
@@ -413,7 +416,13 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Text('Kirim laporan', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  : const Text(
+                      'Kirim laporan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
             ),
           ),
         ],
@@ -463,7 +472,13 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                   borderRadius: BorderRadius.circular(26),
                 ),
               ),
-              child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
           if (isStepTwo && _photos.isNotEmpty) ...[
@@ -494,7 +509,10 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
                     borderRadius: BorderRadius.circular(26),
                   ),
                 ),
-                child: const Text('Lanjut', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Lanjut',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
               ),
             ),
           ],
