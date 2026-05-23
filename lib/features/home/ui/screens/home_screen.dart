@@ -9,6 +9,7 @@ import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
 
 import 'package:provider/provider.dart';
 
+import '../../../report/ui/screens/report_history_screen.dart';
 import '../../../auth/logic/auth_controller.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/home_repository.dart';
@@ -17,14 +18,16 @@ import '../../data/models/map_facility.dart';
 import '../../data/models/map_location.dart';
 import '../../logic/home_controller.dart';
 
+final GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  HomeScreen({Key? key}) : super(key: homeScreenKey);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   late final HomeController _controller;
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
@@ -68,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildExploreTab(context),
             _buildFacilitiesTab(context),
             _buildPlaceholderTab(context, 'Berita'),
-            _buildPlaceholderTab(context, 'Laporan'),
+            const ReportHistoryScreen(),
             _buildProfileTab(context),
           ],
         ),
@@ -97,9 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Berita',
           ),
           NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Report',
+            icon: Icon(Icons.history),
+            selectedIcon: Icon(Icons.history),
+            label: 'Riwayat',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
@@ -109,6 +112,27 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  void openLocationOnMap(double lat, double lng) {
+    setState(() {
+      _selectedIndex = 0; // Explore tab
+    });
+    
+    // We need to wait for the map to be rendered before moving the camera
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapController.move(LatLng(lat, lng), 16.5);
+      
+      // Find the location in the list to show details
+      try {
+        final loc = _controller.locations.value.firstWhere(
+          (l) => l.latitude == lat && l.longitude == lng,
+        );
+        _showLocationDetails(context, loc);
+      } catch (e) {
+        // Handle if location not found
+      }
+    });
   }
 
   Widget _buildExploreTab(BuildContext context) {
@@ -1393,11 +1417,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: isAvailable ? AppTheme.secondary : AppTheme.surface,
+                          color: isAvailable
+                              ? AppTheme.secondary
+                              : AppTheme.surface,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
-                              color: isAvailable ? AppTheme.primary : AppTheme.border,
+                              color: isAvailable
+                                  ? AppTheme.primary
+                                  : AppTheme.border,
                               offset: const Offset(4, 4),
                               blurRadius: 0,
                             ),
@@ -1435,9 +1463,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.navigation),
-                    label: const Text('Rute Navigasi'),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => SystemResponseDialog.success(
+                          title: 'Arahkan ke Peta',
+                          description: 'Aplikasi akan mengarahkan Anda ke aplikasi navigasi peta eksternal untuk menuju lokasi ini.',
+                          buttonText: 'Tutup',
+                          onButtonPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.map),
+                    label: const Text('Lihat di Peta'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: AppTheme.surface,
@@ -1445,20 +1485,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.center,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Lihat Detail Lengkap',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

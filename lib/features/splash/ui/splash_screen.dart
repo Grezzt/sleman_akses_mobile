@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
       final next = _showOnboarding
           ? OnboardingScreen(goHome: _goHome)
-          : (_goHome ? const HomeScreen() : const LoginScreen());
+          : (_goHome ? HomeScreen() : const LoginScreen());
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => next));

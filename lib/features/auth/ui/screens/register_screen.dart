@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:sleman_akses_mobile/app.dart';
+// import 'package:sleman_akses_mobile/app.dart';
 
 import '../../logic/auth_controller.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -55,10 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         barrierDismissible: false,
         builder: (context) => SystemResponseDialog.success(
           title: 'Yeyy Daftar Berhasil!',
-          description: 'Akun Anda telah berhasil dibuat. Selamat datang di Sleman Akses!',
+          description:
+              'Akun Anda telah berhasil dibuat. Selamat datang di Sleman Akses!',
           buttonText: 'Masuk Beranda',
           onButtonPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+            Navigator.of(
+              context,
+            ).pushNamedAndRemoveUntil('/home', (route) => false);
           },
         ),
       );
@@ -141,7 +144,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -163,259 +169,256 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Nama Lengkap',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        hintText: 'Masukkan nama lengkap',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Nama wajib diisi.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Email',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        hintText: 'contoh@email.com',
-                        prefixIcon: Icon(Icons.mail_outline),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Email wajib diisi.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Kata Sandi',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: 'Minimal 8 karakter',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Nama Lengkap',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textMuted),
                           ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Password wajib diisi.';
-                        }
-                        if (value.length < 8) {
-                          return 'Password minimal 8 karakter.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    _PasswordStrengthBar(
-                      score: strengthScore,
-                      color: strengthColor,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Kekuatan: $strengthLabel',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: strengthColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Konfirmasi Kata Sandi',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _confirmController,
-                      obscureText: _obscureConfirm,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        hintText: 'Masukkan ulang kata sandi',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscureConfirm
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: passwordsMatch
-                                ? AppTheme.textMuted
-                                : AppTheme.error,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscureConfirm = !_obscureConfirm;
-                            });
-                          },
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Konfirmasi password wajib diisi.';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Konfirmasi password tidak sama.';
-                        }
-                        return null;
-                      },
-                    ),
-                    if (!passwordsMatch)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: AppTheme.error,
-                              size: 16,
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              hintText: 'Masukkan nama lengkap',
+                              prefixIcon: Icon(Icons.person_outline),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Kata sandi tidak cocok',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Nama wajib diisi.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Email',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              hintText: 'contoh@email.com',
+                              prefixIcon: Icon(Icons.mail_outline),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Email wajib diisi.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Kata Sandi',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Minimal 8 karakter',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Password wajib diisi.';
+                              }
+                              if (value.length < 8) {
+                                return 'Password minimal 8 karakter.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          _PasswordStrengthBar(
+                            score: strengthScore,
+                            color: strengthColor,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Kekuatan: $strengthLabel',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: strengthColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Konfirmasi Kata Sandi',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textMuted),
+                          ),
+                          const SizedBox(height: 6),
+                          TextFormField(
+                            controller: _confirmController,
+                            obscureText: _obscureConfirm,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: 'Masukkan ulang kata sandi',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscureConfirm
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: passwordsMatch
+                                      ? AppTheme.textMuted
+                                      : AppTheme.error,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscureConfirm = !_obscureConfirm;
+                                  });
+                                },
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Konfirmasi password wajib diisi.';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Konfirmasi password tidak sama.';
+                              }
+                              return null;
+                            },
+                          ),
+                          if (!passwordsMatch)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.error_outline,
                                     color: AppTheme.error,
-                                    fontWeight: FontWeight.w600,
+                                    size: 16,
                                   ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Kata sandi tidak cocok',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: AppTheme.error,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: 8),
-                    if (auth.fieldError('full_name') != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          auth.fieldError('full_name')!,
-                          style: const TextStyle(color: AppTheme.error),
-                        ),
-                      ),
-                    if (auth.fieldError('email') != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          auth.fieldError('email')!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    if (auth.fieldError('password') != null)
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          auth.fieldError('password')!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppTheme.secondary,
-                            offset: Offset(4, 4),
-                            blurRadius: 0,
+                          const SizedBox(height: 8),
+                          if (auth.fieldError('full_name') != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                auth.fieldError('full_name')!,
+                                style: const TextStyle(color: AppTheme.error),
+                              ),
+                            ),
+                          if (auth.fieldError('email') != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                auth.fieldError('email')!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          if (auth.fieldError('password') != null)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                auth.fieldError('password')!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          const SizedBox(height: 24),
+                          Container(
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(26),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: AppTheme.secondary,
+                                  offset: Offset(4, 4),
+                                  blurRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: auth.isLoading ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(26),
+                                ),
+                                backgroundColor: AppTheme.primary,
+                                foregroundColor: AppTheme.surface,
+                                elevation: 0,
+                              ),
+                              child: auth.isLoading
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Daftar Sekarang',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                            ),
                           ),
                         ],
                       ),
-                      child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _submit,
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
-                          ),
-                          backgroundColor: AppTheme.primary,
-                          foregroundColor: AppTheme.surface,
-                          elevation: 0,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          'Sudah punya akun? ',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.textMuted),
                         ),
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Daftar Sekarang',
-                                style: TextStyle(
-                                  fontSize: 16,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacementNamed(context, '/login');
+                          },
+                          child: Text(
+                            'Masuk',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppTheme.primary,
                                   fontWeight: FontWeight.w700,
                                 ),
-                              ),
-                      ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Sudah punya akun? ',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: AppTheme.textMuted),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    child: Text(
-                      'Masuk',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
                   ],
                 ),
               ),

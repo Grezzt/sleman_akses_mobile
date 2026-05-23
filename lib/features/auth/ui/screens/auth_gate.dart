@@ -34,7 +34,7 @@ class _AuthGateState extends State<AuthGate> {
 
         final auth = context.watch<AuthController>();
         if (auth.isAuthenticated) {
-          return const HomeScreen();
+          return HomeScreen();
         }
         return const LoginScreen();
       },

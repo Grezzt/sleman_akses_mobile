@@ -50,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finishOnboarding() async {
     await _storage.setCompleted();
     if (!mounted) return;
-    final next = widget.goHome ? const HomeScreen() : const LoginScreen();
+    final next = widget.goHome ? HomeScreen() : const LoginScreen();
     Navigator.of(
       context,
     ).pushReplacement(MaterialPageRoute(builder: (_) => next));
