@@ -50,7 +50,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (success) {
-      Navigator.pushReplacementNamed(context, '/home');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SystemResponseDialog.success(
+          title: 'Yeyy Daftar Berhasil!',
+          description: 'Akun Anda telah berhasil dibuat. Selamat datang di Sleman Akses!',
+          buttonText: 'Masuk Beranda',
+          onButtonPressed: () {
+            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+          },
+        ),
+      );
     } else if (auth.errorMessage != null) {
       showDialog(
         context: context,
@@ -319,7 +330,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           auth.fieldError('full_name')!,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(color: AppTheme.error),
                         ),
                       ),
                     if (auth.fieldError('email') != null)
@@ -339,14 +350,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       ),
                     const SizedBox(height: 24),
-                    SizedBox(
+                    Container(
                       width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppTheme.secondary,
+                            offset: Offset(4, 4),
+                            blurRadius: 0,
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
                         onPressed: auth.isLoading ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(26),
                           ),
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: AppTheme.surface,
+                          elevation: 0,
                         ),
                         child: auth.isLoading
                             ? const SizedBox(
@@ -356,10 +380,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : Text(
+                            : const Text(
                                 'Daftar Sekarang',
                                 style: TextStyle(
-                                  color: Theme.of(context).colorScheme.surface,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                       ),

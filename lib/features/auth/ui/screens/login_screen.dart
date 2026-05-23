@@ -42,7 +42,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (success) {
-      Navigator.pushReplacementNamed(context, '/home');
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => SystemResponseDialog.success(
+          title: 'Yeyy Login Berhasil!',
+          description: 'Selamat datang kembali, mari lanjutkan jelajahi fasilitas aksesibel.',
+          buttonText: 'Masuk Beranda',
+          onButtonPressed: () {
+            Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+          },
+        ),
+      );
     } else if (auth.errorMessage != null) {
       showDialog(
         context: context,
@@ -142,11 +153,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               color: AppTheme.surface,
                               borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
+                              boxShadow: const [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8),
+                                  color: AppTheme.border,
+                                  blurRadius: 0,
+                                  offset: Offset(4, 4),
                                 ),
                               ],
                             ),
@@ -232,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Text(
                                         auth.fieldError('email')!,
                                         style: const TextStyle(
-                                          color: Colors.red,
+                                          color: AppTheme.error,
                                         ),
                                       ),
                                     ),
@@ -242,23 +253,34 @@ class _LoginScreenState extends State<LoginScreen> {
                                       child: Text(
                                         auth.fieldError('password')!,
                                         style: const TextStyle(
-                                          color: Colors.red,
+                                          color: AppTheme.error,
                                         ),
                                       ),
                                     ),
                                   const SizedBox(height: 16),
-                                  SizedBox(
+                                  Container(
                                     width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(26),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: AppTheme.secondary,
+                                          offset: Offset(4, 4),
+                                          blurRadius: 0,
+                                        ),
+                                      ],
+                                    ),
                                     child: ElevatedButton(
                                       onPressed: auth.isLoading
                                           ? null
                                           : _submit,
                                       style: ElevatedButton.styleFrom(
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            26,
-                                          ),
+                                          borderRadius: BorderRadius.circular(26),
                                         ),
+                                        backgroundColor: AppTheme.primary,
+                                        foregroundColor: AppTheme.surface,
+                                        elevation: 0,
                                       ),
                                       child: auth.isLoading
                                           ? const SizedBox(
@@ -271,9 +293,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           : const Text(
                                               'Masuk',
                                               style: TextStyle(
-                                                color: AppTheme.surface,
                                                 fontSize: 16,
-                                                fontWeight: FontWeight.w600,
+                                                fontWeight: FontWeight.w700,
                                               ),
                                             ),
                                     ),

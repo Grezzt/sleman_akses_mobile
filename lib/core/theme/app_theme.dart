@@ -22,7 +22,7 @@ class AppTheme {
   static ThemeData build() => lightTheme;
 
   static ThemeData get lightTheme {
-    final baseTextTheme = ThemeData.light().textTheme;
+    final baseTextTheme = ThemeData.light().textTheme.apply(fontFamily: 'KitRounded');
 
     return ThemeData(
       useMaterial3: true,
