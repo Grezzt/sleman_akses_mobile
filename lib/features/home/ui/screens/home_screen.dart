@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:sleman_akses_mobile/features/home/ui/screens/facility_detail_screen.dart';
 
 import 'package:provider/provider.dart';
 
@@ -1531,7 +1532,12 @@ class HomeScreenState extends State<HomeScreen> {
                   alignment: Alignment.center,
                   child: TextButton(
                     onPressed: () {
-                      // TODO: Implement navigasi detail lengkap fasilitas
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => FacilityDetailScreen(location: location),
+                        ),
+                      );
                     },
                     child: Text(
                       'Lihat Detail Lengkap',
