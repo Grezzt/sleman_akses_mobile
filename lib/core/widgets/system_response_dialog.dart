@@ -8,6 +8,7 @@ class SystemResponseDialog extends StatelessWidget {
   final String description;
   final String buttonText;
   final bool isLoading;
+  final String? imagePath;
   final VoidCallback onButtonPressed;
 
   const SystemResponseDialog({
@@ -17,6 +18,7 @@ class SystemResponseDialog extends StatelessWidget {
     required this.title,
     required this.description,
     required this.buttonText,
+    this.imagePath,
     required this.onButtonPressed,
   }) : super(key: key);
 
@@ -24,6 +26,7 @@ class SystemResponseDialog extends StatelessWidget {
     required String title,
     required String description,
     String buttonText = 'Lanjutkan',
+    String? imagePath,
     required VoidCallback onButtonPressed,
   }) {
     return SystemResponseDialog(
@@ -31,6 +34,7 @@ class SystemResponseDialog extends StatelessWidget {
       title: title,
       description: description,
       buttonText: buttonText,
+      imagePath: imagePath,
       onButtonPressed: onButtonPressed,
     );
   }
@@ -39,6 +43,7 @@ class SystemResponseDialog extends StatelessWidget {
     required String title,
     required String description,
     String buttonText = 'Kembali',
+    String? imagePath,
     required VoidCallback onButtonPressed,
   }) {
     return SystemResponseDialog(
@@ -46,6 +51,7 @@ class SystemResponseDialog extends StatelessWidget {
       title: title,
       description: description,
       buttonText: buttonText,
+      imagePath: imagePath,
       onButtonPressed: onButtonPressed,
     );
   }
@@ -53,6 +59,7 @@ class SystemResponseDialog extends StatelessWidget {
   factory SystemResponseDialog.loading({
     String title = 'Sedang Mengunggah...',
     String description = 'Tunggu sebentar yaa, laporan Anda sedang dikirim.',
+    String? imagePath,
   }) {
     return SystemResponseDialog(
       isSuccess: true,
@@ -60,6 +67,7 @@ class SystemResponseDialog extends StatelessWidget {
       title: title,
       description: description,
       buttonText: '',
+      imagePath: imagePath,
       onButtonPressed: () {},
     );
   }
@@ -110,10 +118,13 @@ class SystemResponseDialog extends StatelessWidget {
   }
 
   Widget _buildMascot() {
+    final defaultAsset = isSuccess
+        ? 'public/konfirmasi-titik-lokasi-unactive.svg'
+        : 'public/maskot-nangis.svg';
+    final assetPath = imagePath ?? defaultAsset;
+
     return SvgPicture.asset(
-      isSuccess
-          ? 'public/konfirmasi-titik-lokasi-unactive.svg'
-          : 'public/maskot-nangis.svg',
+      assetPath,
       height: 140,
       fit: BoxFit.contain,
     );

@@ -40,9 +40,6 @@ class FacilityDetailScreen extends StatelessWidget {
         ? location.photoUrl.split(',')
         : [];
 
-    final coordsString =
-        '${location.latitude.toStringAsFixed(4)}, ${location.longitude.toStringAsFixed(4)}';
-
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -202,8 +199,11 @@ class FacilityDetailScreen extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on,
-                          color: AppTheme.primary, size: 22),
+                      const Icon(
+                        Icons.location_on,
+                        color: AppTheme.primary,
+                        size: 22,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -230,18 +230,18 @@ class FacilityDetailScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildInfoRow(
-                      'Tgl. Publikasi',
-                      _formatDate(location.publishDate),
-                      isBold: true),
+                    'Tgl. Publikasi',
+                    _formatDate(location.publishDate),
+                    isBold: true,
+                  ),
                   const Divider(height: 24, color: AppTheme.border),
                   _buildMapMinimap(location.latitude, location.longitude),
                   const Divider(height: 24, color: AppTheme.border),
                   _buildInfoRow(
-                      'Dilaporkan Oleh',
-                      location.reportedBy.isNotEmpty
-                          ? location.reportedBy
-                          : '-',
-                      isBold: true),
+                    'Dilaporkan Oleh',
+                    location.reportedBy.isNotEmpty ? location.reportedBy : '-',
+                    isBold: true,
+                  ),
                 ],
               ),
             ),
@@ -319,10 +319,7 @@ class FacilityDetailScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: AppTheme.textMuted,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppTheme.textMuted, fontSize: 14),
         ),
         Text(
           value,
@@ -376,11 +373,7 @@ class FacilityDetailScreen extends StatelessWidget {
             ),
           ),
           if (isActive)
-            const Icon(
-              Icons.check_circle,
-              color: AppTheme.primary,
-              size: 20,
-            ),
+            const Icon(Icons.check_circle, color: AppTheme.primary, size: 20),
         ],
       ),
     );
@@ -392,10 +385,7 @@ class FacilityDetailScreen extends StatelessWidget {
       children: [
         const Text(
           'Koordinat GPS',
-          style: TextStyle(
-            color: AppTheme.textMuted,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
         ),
         const SizedBox(height: 12),
         Container(

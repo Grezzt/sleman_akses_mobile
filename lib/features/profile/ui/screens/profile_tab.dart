@@ -76,7 +76,8 @@ class _ProfileTabState extends State<ProfileTab> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const EditProfileScreen(),
+                                      builder: (context) =>
+                                          const EditProfileScreen(),
                                     ),
                                   );
                                 },
@@ -211,7 +212,8 @@ class _ProfileTabState extends State<ProfileTab> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const ChangePasswordScreen(),
+                                builder: (context) =>
+                                    const ChangePasswordScreen(),
                               ),
                             );
                           },
@@ -227,7 +229,9 @@ class _ProfileTabState extends State<ProfileTab> {
                               context: context,
                               builder: (context) => SystemResponseDialog.success(
                                 title: 'Segera Hadir!',
-                                description: 'Fitur Pengaturan Notifikasi sedang dalam tahap pengembangan.',
+                                description:
+                                    'Fitur Pengaturan Notifikasi sedang dalam tahap pengembangan.',
+                                imagePath: 'public/maskot-genit.svg',
                                 buttonText: 'Tutup',
                                 onButtonPressed: () => Navigator.pop(context),
                               ),
@@ -245,7 +249,9 @@ class _ProfileTabState extends State<ProfileTab> {
                               context: context,
                               builder: (context) => SystemResponseDialog.success(
                                 title: 'Segera Hadir!',
-                                description: 'Fitur Tentang Aplikasi sedang dalam tahap pengembangan.',
+                                description:
+                                    'Fitur Tentang Aplikasi sedang dalam tahap pengembangan.',
+                                imagePath: 'public/maskot-genit.svg',
                                 buttonText: 'Tutup',
                                 onButtonPressed: () => Navigator.pop(context),
                               ),
@@ -263,7 +269,9 @@ class _ProfileTabState extends State<ProfileTab> {
                               context: context,
                               builder: (context) => SystemResponseDialog.success(
                                 title: 'Segera Hadir!',
-                                description: 'Fitur Kebijakan Privasi sedang dalam tahap pengembangan.',
+                                description:
+                                    'Fitur Kebijakan Privasi sedang dalam tahap pengembangan.',
+                                imagePath: 'public/maskot-genit.svg',
                                 buttonText: 'Tutup',
                                 onButtonPressed: () => Navigator.pop(context),
                               ),

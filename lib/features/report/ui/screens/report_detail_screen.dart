@@ -71,9 +71,6 @@ class ReportDetailScreen extends StatelessWidget {
         : '-';
 
     final dateString = _formatDate(report['timestamp']);
-    final reportId = report['id'] != null
-        ? '#RPT-${report['id'].toString().padLeft(3, '0')}'
-        : '#RPT-UNKNOWN';
     final details = report['details'] as List<dynamic>? ?? [];
 
     final rawImageUrl = report['photo_url'];
@@ -499,10 +496,7 @@ class ReportDetailScreen extends StatelessWidget {
       children: [
         const Text(
           'Koordinat GPS',
-          style: TextStyle(
-            color: AppTheme.textMuted,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: AppTheme.textMuted, fontSize: 14),
         ),
         const SizedBox(height: 12),
         Container(

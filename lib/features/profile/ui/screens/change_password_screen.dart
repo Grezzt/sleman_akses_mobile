@@ -49,6 +49,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             title: 'Berhasil!',
             description: 'Kata sandi berhasil diperbarui',
             buttonText: 'Tutup',
+            imagePath: 'public/onboarding slide 3.svg',
             onButtonPressed: () {
               Navigator.pop(context); // Close dialog
               Navigator.pop(context); // Close screen
@@ -56,7 +57,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ),
         );
       } else {
-        final message = controller.updateErrorMessage ?? 'Gagal memperbarui kata sandi';
+        final message =
+            controller.updateErrorMessage ?? 'Gagal memperbarui kata sandi';
         showDialog(
           context: context,
           builder: (context) => SystemResponseDialog.error(

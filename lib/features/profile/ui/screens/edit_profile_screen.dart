@@ -44,7 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (success) {
         // Also refresh auth user profile so it updates everywhere
         await context.read<AuthController>().fetchProfile();
-        
+
         if (mounted) {
           showDialog(
             context: context,
@@ -52,15 +52,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             builder: (context) => SystemResponseDialog.success(
               title: 'Berhasil!',
               description: 'Profil berhasil diperbarui',
+              imagePath: 'public/onboarding slide 3.svg',
               buttonText: 'Tutup',
               onButtonPressed: () {
                 Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close screen
               },
             ),
           );
         }
       } else {
-        final message = controller.updateErrorMessage ?? 'Terjadi kesalahan saat menyimpan profil';
+        final message =
+            controller.updateErrorMessage ??
+            'Terjadi kesalahan saat menyimpan profil';
         showDialog(
           context: context,
           builder: (context) => SystemResponseDialog.error(
