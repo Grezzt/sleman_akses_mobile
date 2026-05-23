@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
 import 'package:sleman_akses_mobile/features/home/ui/screens/home_screen.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ReportDetailScreen extends StatelessWidget {
   final Map<String, dynamic> report;
@@ -163,11 +164,11 @@ class ReportDetailScreen extends StatelessWidget {
                         child: PageView.builder(
                           itemCount: photoUrls.length,
                           itemBuilder: (context, index) {
-                            return Image.network(
-                              photoUrls[index].trim(),
+                            return CachedNetworkImage(
+                              imageUrl: photoUrls[index].trim(),
                               width: double.infinity,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
+                              errorWidget: (context, url, error) =>
                                   _buildPlaceholderImage(),
                             );
                           },

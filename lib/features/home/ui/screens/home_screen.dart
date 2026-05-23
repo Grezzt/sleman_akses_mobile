@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
 import 'package:sleman_akses_mobile/core/widgets/system_response_dialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import 'package:provider/provider.dart';
 
@@ -118,11 +119,11 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = 0; // Explore tab
     });
-    
+
     // We need to wait for the map to be rendered before moving the camera
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _mapController.move(LatLng(lat, lng), 16.5);
-      
+
       // Find the location in the list to show details
       try {
         final loc = _controller.locations.value.firstWhere(
@@ -415,10 +416,10 @@ class HomeScreenState extends State<HomeScreen> {
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
                   child: photoUrls.isNotEmpty
-                      ? Image.network(
-                          photoUrls[0].trim(),
+                      ? CachedNetworkImage(
+                          imageUrl: photoUrls[0].trim(),
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
+                          errorWidget: (_, __, ___) =>
                               _buildPlaceholderImage(),
                         )
                       : _buildPlaceholderImage(),
@@ -1244,10 +1245,10 @@ class HomeScreenState extends State<HomeScreen> {
                                       });
                                     },
                                     itemBuilder: (context, index) {
-                                      return Image.network(
-                                        photoUrls[index].trim(),
+                                      return CachedNetworkImage(
+                                        imageUrl: photoUrls[index].trim(),
                                         fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) {
+                                        errorWidget: (_, __, ___) {
                                           return Container(
                                             color: Colors.black12,
                                             alignment: Alignment.center,
@@ -1456,35 +1457,87 @@ class HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(26),
                     boxShadow: const [
                       BoxShadow(
-                        color: AppTheme.secondary,
+                        color: AppTheme.primary,
                         offset: Offset(4, 4),
                         blurRadius: 0,
                       ),
                     ],
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => SystemResponseDialog.success(
-                          title: 'Arahkan ke Peta',
-                          description: 'Aplikasi akan mengarahkan Anda ke aplikasi navigasi peta eksternal untuk menuju lokasi ini.',
-                          buttonText: 'Tutup',
-                          onButtonPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.map),
-                    label: const Text('Lihat di Peta'),
+                    onPressed: () {},
+                    icon: const Icon(Icons.navigation),
+                    label: const Text('Rute Navigasi'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      foregroundColor: AppTheme.surface,
+                      backgroundColor: AppTheme.secondary,
+                      foregroundColor: AppTheme.primary,
                       elevation: 0,
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_selectedIndex != 0) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppTheme.secondary,
+                          offset: Offset(4, 4),
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => SystemResponseDialog.success(
+                            title: 'Menuju Lokasi',
+                            description:
+                                'Mari lanjutkan, Kami akan menampilkan lokasi nya!',
+                            buttonText: 'Lanjutkan',
+                            onButtonPressed: () {
+                              Navigator.pop(context); // Tutup dialog
+                              Navigator.pop(context); // Tutup bottom sheet
+                              openLocationOnMap(
+                                location.latitude,
+                                location.longitude,
+                              );
+                            },
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.map),
+                      label: const Text('Lihat di Peta'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: AppTheme.surface,
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(26),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.center,
+                  child: TextButton(
+                    onPressed: () {
+                      // TODO: Implement navigasi detail lengkap fasilitas
+                    },
+                    child: Text(
+                      'Lihat Detail Lengkap',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

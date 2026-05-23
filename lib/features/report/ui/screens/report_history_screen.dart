@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:sleman_akses_mobile/core/network/api_client.dart';
 import 'package:sleman_akses_mobile/core/theme/app_theme.dart';
+import 'package:sleman_akses_mobile/features/home/logic/home_controller.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:sleman_akses_mobile/features/report/ui/screens/report_detail_screen.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
@@ -323,10 +326,10 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen>
                     width: 80,
                     height: 80,
                     child: photoUrls.isNotEmpty
-                        ? Image.network(
-                            photoUrls[0].trim(),
+                        ? CachedNetworkImage(
+                            imageUrl: photoUrls[0].trim(),
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
+                            errorWidget: (context, url, error) =>
                                 _buildPlaceholderImage(),
                           )
                         : _buildPlaceholderImage(),
