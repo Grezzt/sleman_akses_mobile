@@ -5,6 +5,8 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/logic/auth_controller.dart';
+import 'features/profile/data/profile_repository.dart';
+import 'features/profile/logic/profile_controller.dart';
 import 'features/auth/ui/screens/login_screen.dart';
 import 'features/auth/ui/screens/register_screen.dart';
 import 'features/home/ui/screens/home_screen.dart';
@@ -23,6 +25,9 @@ class App extends StatelessWidget {
           create: (_) => AuthController(
             AuthRepository(AuthRemoteDataSource(), TokenStorage()),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ProfileController(ProfileRepository()),
         ),
       ],
       child: MaterialApp(
