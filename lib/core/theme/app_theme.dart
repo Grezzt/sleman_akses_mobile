@@ -11,7 +11,7 @@ class AppTheme {
   static const Color textPrimary = Color(0xFF037940);
   static const Color textMuted = Color(0xFF4B5563);
   // static const Color textOnPrimary = Color(0xFFFFFFFF);
-  static const Color textOnsurface = Color.fromARGB(255, 15, 15, 15);
+  static const Color textOnsurface = Color(0xFF0F0F0F);
   static const Color border = Color(0xFFD4D4D4);
 
   // Semantic colors
@@ -22,7 +22,9 @@ class AppTheme {
   static ThemeData build() => lightTheme;
 
   static ThemeData get lightTheme {
-    final baseTextTheme = ThemeData.light().textTheme.apply(fontFamily: 'KitRounded');
+    final baseTextTheme = ThemeData.light().textTheme.apply(
+      fontFamily: 'KitRounded',
+    );
 
     return ThemeData(
       useMaterial3: true,
