@@ -16,6 +16,7 @@ class ApiClient {
   static Map<String, String> get headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning': '69420', // Bypass ngrok warning page
     if (_token != null) 'Authorization': 'Bearer $_token',
   };
 
