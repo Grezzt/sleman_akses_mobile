@@ -846,16 +846,22 @@ class _CreateReportScreenState extends State<CreateReportScreen> {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         if (mounted) {
+          // Save values before clearing draft
+          final ramp = _hasRamp;
+          final elevator = _hasElevator;
+          final toilet = _hasDisabledToilet;
+          final parking = _hasDisabledParking;
+
           _draft.clear(); // Clear the draft upon success
           Navigator.pop(context); // Dismiss loading dialog
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (_) => SuccessReportScreen(
-                hasRamp: _hasRamp,
-                hasElevator: _hasElevator,
-                hasDisabledToilet: _hasDisabledToilet,
-                hasDisabledParking: _hasDisabledParking,
+                hasRamp: ramp,
+                hasElevator: elevator,
+                hasDisabledToilet: toilet,
+                hasDisabledParking: parking,
               ),
             ),
           );

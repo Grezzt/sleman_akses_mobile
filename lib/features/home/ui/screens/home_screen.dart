@@ -276,11 +276,12 @@ class HomeScreenState extends State<HomeScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  onPressed: () {
-                                    Navigator.pushNamed(
+                                  onPressed: () async {
+                                    await Navigator.pushNamed(
                                       context,
                                       '/report/create',
                                     );
+                                    _controller.load(); // Refresh data after returning
                                   },
                                   child: const Icon(Icons.add),
                                 ),
@@ -356,19 +357,23 @@ class HomeScreenState extends State<HomeScreen> {
                                   context,
                                   'Fasilitas tidak ditemukan.',
                                 )
-                              : ListView.builder(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
+                              : RefreshIndicator(
+                                  onRefresh: _controller.load,
+                                  color: AppTheme.primary,
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    itemCount: searchedLocations.length,
+                                    itemBuilder: (context, index) {
+                                      final location = searchedLocations[index];
+                                      return _buildFacilityCard(
+                                        context,
+                                        location,
+                                      );
+                                    },
                                   ),
-                                  itemCount: searchedLocations.length,
-                                  itemBuilder: (context, index) {
-                                    final location = searchedLocations[index];
-                                    return _buildFacilityCard(
-                                      context,
-                                      location,
-                                    );
-                                  },
                                 ),
                         ),
                       ],
@@ -749,24 +754,64 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        _buildIconActionButton(
+          context, 
+          Icons.notifications_none,
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => Dialog(
+                backgroundColor: Colors.transparent,
+                child: SystemResponseDialog.success(
+                  title: 'Segera Hadir!',
+                  description: 'Fitur Notifikasi sedang dalam tahap pengembangan.',
+                  buttonText: 'Tutup',
+                  imagePath: 'public/maskot-genit.svg',
+                  shadowColor: AppTheme.textOnsurface,
+                  onButtonPressed: () => Navigator.pop(context),
+                ),
+              ),
+            );
+          },
+        ),
         const SizedBox(width: 12),
-        _buildIconActionButton(context, Icons.notifications_none),
-        const SizedBox(width: 12),
-        _buildIconActionButton(context, Icons.person_outline),
+        _buildIconActionButton(
+          context, 
+          Icons.person_outline,
+          onTap: () {
+            setState(() {
+              _selectedIndex = 4; // 4 is the index of ProfileTab
+            });
+          },
+        ),
       ],
     );
   }
 
-  Widget _buildIconActionButton(BuildContext context, IconData icon) {
+  Widget _buildIconActionButton(BuildContext context, IconData icon, {VoidCallback? onTap}) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: colorScheme.primary),
+        ),
       ),
-      child: Icon(icon, color: colorScheme.primary),
     );
   }
 
@@ -1203,7 +1248,22 @@ class HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Dialog(
+                          backgroundColor: Colors.transparent,
+                          child: SystemResponseDialog.success(
+                            title: 'Segera Hadir!',
+                            description: 'Fitur Rute Navigasi sedang dalam tahap pengembangan.',
+                            buttonText: 'Tutup',
+                            imagePath: 'public/maskot-genit.svg',
+                            shadowColor: AppTheme.textOnsurface,
+                            onButtonPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                      );
+                    },
                     icon: const Icon(Icons.navigation),
                     label: const Text('Rute Navigasi'),
                     style: ElevatedButton.styleFrom(
