@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 enum TtsPlayerState { stopped, playing, paused }
@@ -15,6 +16,8 @@ class ArticleTtsService extends ChangeNotifier {
   int _currentIndex = 0;
   double _speedMultiplier = 1.0;
   bool _isSummaryIncluded = false;
+  bool _isPluginAvailable = true;
+  String? _errorMessage;
 
   // Getters
   TtsPlayerState get state => _state;
@@ -25,8 +28,16 @@ class ArticleTtsService extends ChangeNotifier {
   int get totalSegments => _segments.length;
   double get speedMultiplier => _speedMultiplier;
   bool get isSummaryIncluded => _isSummaryIncluded;
+  bool get isPluginAvailable => _isPluginAvailable;
+  String? get errorMessage => _errorMessage;
 
   String get statusText {
+    if (!_isPluginAvailable) {
+      return 'TTS butuh restart penuh aplikasi (re-run)';
+    }
+    if (_errorMessage != null) {
+      return _errorMessage!;
+    }
     if (isStopped) return 'Siap mendengarkan';
     if (isPaused) return 'Dijeda';
 
@@ -58,13 +69,25 @@ class ArticleTtsService extends ChangeNotifier {
       });
 
       _flutterTts.setErrorHandler((msg) {
-        debugPrint('[TTS] Error: $msg');
-        _playNext();
+        debugPrint('[TTS] Native error: $msg');
+        if (_state == TtsPlayerState.playing) {
+          _playNext();
+        }
       });
 
       _flutterTts.setCancelHandler(() {
-        // Handled in stop()
+        if (_state == TtsPlayerState.playing) {
+          _state = TtsPlayerState.stopped;
+          notifyListeners();
+        }
       });
+
+      _isPluginAvailable = true;
+    } on MissingPluginException catch (e) {
+      debugPrint('[TTS] Plugin not registered in native build: $e');
+      _isPluginAvailable = false;
+      _errorMessage = 'Harap stop dan jalankan ulang (re-run) aplikasi.';
+      notifyListeners();
     } catch (e) {
       debugPrint('[TTS] Init failed: $e');
     }
@@ -75,6 +98,11 @@ class ArticleTtsService extends ChangeNotifier {
     required List<String> paragraphs,
     int startIndex = 0,
   }) async {
+    if (!_isPluginAvailable) {
+      notifyListeners();
+      return;
+    }
+
     await stop();
 
     _segments = [];
@@ -88,12 +116,14 @@ class ArticleTtsService extends ChangeNotifier {
 
     _currentIndex = startIndex.clamp(0, _segments.length - 1);
     _state = TtsPlayerState.playing;
+    _errorMessage = null;
     notifyListeners();
 
     await _speakCurrent();
   }
 
   Future<void> _speakCurrent() async {
+    if (!_isPluginAvailable) return;
     if (_currentIndex >= _segments.length) {
       await stop();
       return;
@@ -103,9 +133,14 @@ class ArticleTtsService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _flutterTts.stop();
       await _flutterTts.setSpeechRate(0.48 * _speedMultiplier);
       await _flutterTts.speak(text);
+    } on MissingPluginException catch (e) {
+      debugPrint('[TTS] MissingPluginException during speak: $e');
+      _isPluginAvailable = false;
+      _errorMessage = 'Harap stop dan jalankan ulang (re-run) aplikasi.';
+      _state = TtsPlayerState.stopped;
+      notifyListeners();
     } catch (e) {
       debugPrint('[TTS] Speak error: $e');
     }
@@ -127,7 +162,9 @@ class ArticleTtsService extends ChangeNotifier {
     try {
       await _flutterTts.pause();
     } catch (_) {
-      await _flutterTts.stop();
+      try {
+        await _flutterTts.stop();
+      } catch (_) {}
     }
     _state = TtsPlayerState.paused;
     notifyListeners();
@@ -161,14 +198,18 @@ class ArticleTtsService extends ChangeNotifier {
     _speedMultiplier = multiplier;
     notifyListeners();
 
-    if (_state == TtsPlayerState.playing) {
-      await _flutterTts.setSpeechRate(0.48 * _speedMultiplier);
+    if (_state == TtsPlayerState.playing && _isPluginAvailable) {
+      try {
+        await _flutterTts.setSpeechRate(0.48 * _speedMultiplier);
+      } catch (_) {}
     }
   }
 
   @override
   void dispose() {
-    _flutterTts.stop();
+    try {
+      _flutterTts.stop();
+    } catch (_) {}
     super.dispose();
   }
 }

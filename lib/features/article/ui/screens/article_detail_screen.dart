@@ -104,6 +104,29 @@ class _ArticleDetailScreenState extends State<ArticleDetailScreen> {
   }
 
   void _toggleTtsPlayback() {
+    if (!_ttsService.isPluginAvailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppTheme.primary,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          content: const Row(
+            children: [
+              Icon(Icons.info, color: AppTheme.secondary, size: 20),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Plugin TTS baru dipasang. Mohon Stop dan Jalankan Ulang (re-run) aplikasi agar native engine terkompilasi.',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
     if (_ttsService.isPlaying) {
       _ttsService.pause();
     } else if (_ttsService.isPaused) {
