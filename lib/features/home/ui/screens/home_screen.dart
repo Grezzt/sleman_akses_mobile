@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import '../../../report/ui/screens/report_history_screen.dart';
 import '../../../auth/logic/auth_controller.dart';
 import '../../../profile/ui/screens/profile_tab.dart';
+import '../../../article/ui/screens/article_tab.dart';
 import '../../data/datasources/home_remote_data_source.dart';
 import '../../data/home_repository.dart';
 import '../../data/models/facility_category.dart';
@@ -73,7 +74,7 @@ class HomeScreenState extends State<HomeScreen> {
           children: [
             _buildExploreTab(context),
             _buildFacilitiesTab(context),
-            _buildPlaceholderTab(context, 'Berita'),
+            const ArticleTab(),
             const ReportHistoryScreen(),
             const ProfileTab(),
           ],

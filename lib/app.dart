@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
+import 'features/article/data/article_repository.dart';
+import 'features/article/logic/article_controller.dart';
 import 'features/auth/data/auth_repository.dart';
 import 'features/auth/data/datasources/auth_remote_data_source.dart';
 import 'features/auth/logic/auth_controller.dart';
@@ -28,6 +30,9 @@ class App extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ProfileController(ProfileRepository()),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ArticleController(ArticleRepository()),
         ),
       ],
       child: MaterialApp(

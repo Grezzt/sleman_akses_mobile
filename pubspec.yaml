@@ -46,6 +46,8 @@ dependencies:
   flutter_svg: ^2.3.0
   logger: ^2.7.0
   crypto: ^3.0.7
+  url_launcher: ^6.3.2
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:
