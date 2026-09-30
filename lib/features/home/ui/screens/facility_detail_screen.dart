@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'home_screen.dart';
 
 class FacilityDetailScreen extends StatelessWidget {
   final MapLocation location;
@@ -273,6 +274,48 @@ class FacilityDetailScreen extends StatelessWidget {
                   ),
                 );
               }),
+
+            const SizedBox(height: 24),
+
+            // Tombol Mulai Navigasi Langsung ke Fasilitas Ini
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: AppTheme.secondary,
+                    offset: Offset(4, 4),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  homeScreenKey.currentState?.startNavigationTo(
+                    location,
+                    autoStartLive: true,
+                  );
+                },
+                icon: const Icon(Icons.navigation, size: 20),
+                label: const Text(
+                  'Mulai Navigasi ke Lokasi Ini',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: AppTheme.surface,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 40),
           ],

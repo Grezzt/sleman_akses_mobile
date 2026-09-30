@@ -20,6 +20,12 @@ import '../../data/home_repository.dart';
 import '../../data/models/facility_category.dart';
 import '../../data/models/map_facility.dart';
 import '../../data/models/map_location.dart';
+import '../../data/models/navigation_step.dart';
+import '../../data/services/osrm_routing_service.dart';
+import '../../../../core/services/voice_guidance_service.dart';
+import '../widgets/nav_top_maneuver_bar.dart';
+import '../widgets/nav_bottom_control_bar.dart';
+import '../widgets/route_summary_card.dart';
 import '../../logic/home_controller.dart';
 
 final GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
@@ -41,6 +47,21 @@ class HomeScreenState extends State<HomeScreen> {
   bool _isLocating = false;
   Timer? _debounce;
 
+  // Live Navigation & Routing State
+  final OsrmRoutingService _routingService = OsrmRoutingService();
+  final VoiceGuidanceService _voiceService = VoiceGuidanceService();
+  bool _isLiveNavigating = false;
+  bool _isRoutePreview = false;
+  RouteData? _currentRoute;
+  int _currentStepIndex = 0;
+  MapLocation? _activeNavTarget;
+  bool _followCamera = true;
+  bool _voiceEnabled = true;
+  String _lastSpokenInstruction = '';
+  StreamSubscription<Position>? _positionStreamSub;
+  double _distanceToActiveStepMeters = 0;
+  double _remainingDistanceToDestMeters = 0;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +80,8 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _positionStreamSub?.cancel();
+    _voiceService.stop();
     _searchController.dispose();
     _controller.dispose();
     super.dispose();
@@ -80,13 +103,15 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+      bottomNavigationBar: _isLiveNavigating
+          ? null
+          : NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.map_outlined),
@@ -197,6 +222,13 @@ class HomeScreenState extends State<HomeScreen> {
                             interactionOptions: const InteractionOptions(
                               flags: InteractiveFlag.all,
                             ),
+                            onPositionChanged: (position, hasGesture) {
+                              if (hasGesture && _isLiveNavigating) {
+                                setState(() {
+                                  _followCamera = false;
+                                });
+                              }
+                            },
                           ),
                           children: [
                             TileLayer(
@@ -204,6 +236,23 @@ class HomeScreenState extends State<HomeScreen> {
                                   'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=$mapTilerKey',
                               userAgentPackageName: 'id.sleman.akses',
                             ),
+                            if (_currentRoute != null)
+                              PolylineLayer(
+                                polylines: [
+                                  // Outer black border (Neobrutalism)
+                                  Polyline(
+                                    points: _currentRoute!.points,
+                                    strokeWidth: 7.0,
+                                    color: const Color(0xFF0F0F0F),
+                                  ),
+                                  // Inner primary green line
+                                  Polyline(
+                                    points: _currentRoute!.points,
+                                    strokeWidth: 4.0,
+                                    color: AppTheme.primary,
+                                  ),
+                                ],
+                              ),
                             if (_deviceLocation != null)
                               MarkerLayer(markers: [_buildDeviceMarker()]),
                             MarkerLayer(
@@ -215,81 +264,137 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
+                        // TOP HUD: Jika sedang navigasi, gantikan Search Row + Chips dengan NavTopManeuverBar
                         Positioned(
                           top: 16,
                           left: 16,
                           right: 16,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildSearchRow(context),
-                              const SizedBox(height: 12),
-                              _buildCategoryChips(context, categories),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          right: 16,
-                          bottom: 16,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              FloatingActionButton.small(
-                                heroTag: 'fab-location',
-                                backgroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                onPressed: () {
-                                  _requestAndFetchLocation(moveCamera: true);
-                                },
-                                child: _isLocating
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: AppTheme.primary,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.my_location,
-                                        color: AppTheme.primary,
-                                      ),
-                              ),
-                              const SizedBox(height: 12),
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: AppTheme.secondary,
-                                      blurRadius: 0,
-                                      offset: Offset(4, 4),
-                                    ),
+                          child: _isLiveNavigating
+                              ? NavTopManeuverBar(
+                                  step: (_currentRoute != null &&
+                                          _currentRoute!.steps.isNotEmpty &&
+                                          _currentStepIndex <
+                                              _currentRoute!.steps.length)
+                                      ? _currentRoute!.steps[_currentStepIndex]
+                                      : null,
+                                  distanceToStepMeters:
+                                      _distanceToActiveStepMeters,
+                                  onStop: _stopNavigation,
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildSearchRow(context),
+                                    const SizedBox(height: 12),
+                                    _buildCategoryChips(context, categories),
                                   ],
                                 ),
-                                child: FloatingActionButton(
-                                  heroTag: 'fab-report',
-                                  elevation: 0,
-                                  backgroundColor: AppTheme.primary,
-                                  foregroundColor: AppTheme.surface,
+                        ),
+                        // BOTTOM HUD: Live Navigasi -> NavBottomControlBar; Preview -> RouteSummaryCard; Normal -> FABs
+                        if (_isLiveNavigating)
+                          Positioned(
+                            left: 16,
+                            right: 16,
+                            bottom: 16,
+                            child: NavBottomControlBar(
+                              destinationName: _activeNavTarget?.placeName ??
+                                  'Fasilitas Publik',
+                              remainingDistanceMeters:
+                                  _remainingDistanceToDestMeters,
+                              followCamera: _followCamera,
+                              voiceEnabled: _voiceEnabled,
+                              onRecenter: () {
+                                setState(() {
+                                  _followCamera = true;
+                                });
+                                if (_deviceLocation != null) {
+                                  _mapController.move(_deviceLocation!, 17.5);
+                                }
+                              },
+                              onToggleVoice: () {
+                                setState(() {
+                                  _voiceEnabled = !_voiceEnabled;
+                                  _voiceService.toggleEnabled();
+                                });
+                              },
+                              onStop: _stopNavigation,
+                            ),
+                          )
+                        else if (_isRoutePreview && _currentRoute != null)
+                          Positioned(
+                            left: 16,
+                            right: 16,
+                            bottom: 16,
+                            child: RouteSummaryCard(
+                              routeData: _currentRoute!,
+                              onStartLiveNav: _startLiveNavigation,
+                              onClose: _clearRoute,
+                            ),
+                          )
+                        else
+                          Positioned(
+                            right: 16,
+                            bottom: 16,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                FloatingActionButton.small(
+                                  heroTag: 'fab-location',
+                                  backgroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  onPressed: () async {
-                                    await Navigator.pushNamed(
-                                      context,
-                                      '/report/create',
-                                    );
-                                    _controller.load(); // Refresh data after returning
+                                  onPressed: () {
+                                    _requestAndFetchLocation(moveCamera: true);
                                   },
-                                  child: const Icon(Icons.add),
+                                  child: _isLocating
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: AppTheme.primary,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.my_location,
+                                          color: AppTheme.primary,
+                                        ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 12),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: AppTheme.secondary,
+                                        blurRadius: 0,
+                                        offset: Offset(4, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: FloatingActionButton(
+                                    heroTag: 'fab-report',
+                                    elevation: 0,
+                                    backgroundColor: AppTheme.primary,
+                                    foregroundColor: AppTheme.surface,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    onPressed: () async {
+                                      await Navigator.pushNamed(
+                                        context,
+                                        '/report/create',
+                                      );
+                                      _controller
+                                          .load(); // Refresh data after returning
+                                    },
+                                    child: const Icon(Icons.add),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     );
                   },
@@ -339,6 +444,26 @@ class HomeScreenState extends State<HomeScreen> {
                       _searchQuery,
                     );
 
+                    // Task 6: Urutkan berdasarkan jarak terdekat dari posisi user (LBS Haversine)
+                    final sortedLocations = List<MapLocation>.from(searchedLocations);
+                    if (_deviceLocation != null) {
+                      sortedLocations.sort((a, b) {
+                        final distA = Geolocator.distanceBetween(
+                          _deviceLocation!.latitude,
+                          _deviceLocation!.longitude,
+                          a.latitude,
+                          a.longitude,
+                        );
+                        final distB = Geolocator.distanceBetween(
+                          _deviceLocation!.latitude,
+                          _deviceLocation!.longitude,
+                          b.latitude,
+                          b.longitude,
+                        );
+                        return distA.compareTo(distB);
+                      });
+                    }
+
                     return Column(
                       children: [
                         Padding(
@@ -353,7 +478,7 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Expanded(
-                          child: searchedLocations.isEmpty
+                          child: sortedLocations.isEmpty
                               ? _buildEmptyState(
                                   context,
                                   'Fasilitas tidak ditemukan.',
@@ -366,12 +491,13 @@ class HomeScreenState extends State<HomeScreen> {
                                       horizontal: 16,
                                       vertical: 8,
                                     ),
-                                    itemCount: searchedLocations.length,
+                                    itemCount: sortedLocations.length,
                                     itemBuilder: (context, index) {
-                                      final location = searchedLocations[index];
+                                      final location = sortedLocations[index];
                                       return _buildFacilityCard(
                                         context,
                                         location,
+                                        index: index,
                                       );
                                     },
                                   ),
@@ -389,12 +515,33 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFacilityCard(BuildContext context, MapLocation location) {
+  Widget _buildFacilityCard(
+    BuildContext context,
+    MapLocation location, {
+    int index = -1,
+  }) {
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
     final photoUrls = location.photoUrl.isNotEmpty
         ? location.photoUrl.split(',')
         : [];
+
+    double? distMeters;
+    if (_deviceLocation != null) {
+      distMeters = Geolocator.distanceBetween(
+        _deviceLocation!.latitude,
+        _deviceLocation!.longitude,
+        location.latitude,
+        location.longitude,
+      );
+    }
+
+    String? formattedDist;
+    if (distMeters != null) {
+      formattedDist = distMeters < 1000
+          ? '${distMeters.round()} m'
+          : '${(distMeters / 1000).toStringAsFixed(1)} km';
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -452,6 +599,49 @@ class HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
+                        if (formattedDist != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: index == 0
+                                  ? AppTheme.secondary
+                                  : AppTheme.background,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: index == 0
+                                    ? AppTheme.primary
+                                    : AppTheme.border,
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  index == 0 ? Icons.stars : Icons.near_me,
+                                  size: 12,
+                                  color: AppTheme.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  index == 0
+                                      ? 'Terdekat • $formattedDist'
+                                      : formattedDist,
+                                  style: TextStyle(
+                                    color: AppTheme.primary,
+                                    fontWeight: index == 0
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(width: 6),
                         if (location.status.isNotEmpty)
                           _buildBadge(
                             label: _statusLabel(location.status),
@@ -987,6 +1177,266 @@ class HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // --- LIVE IN-APP NAVIGATION & OSRM LOGIC ---
+
+  Future<void> startNavigationTo(
+    MapLocation location, {
+    bool autoStartLive = false,
+  }) async {
+    setState(() {
+      _selectedIndex = 0; // Explore tab
+    });
+
+    // Cek ketersediaan lokasi perangkat
+    LatLng? origin = _deviceLocation;
+    if (origin == null) {
+      await _requestAndFetchLocation();
+      origin = _deviceLocation;
+    }
+
+    if (origin == null) {
+      _showGpsErrorModal(location);
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Mencari rute ke ${location.placeName}...'),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 2),
+          backgroundColor: AppTheme.primary,
+        ),
+      );
+    }
+
+    try {
+      final route = await _routingService.getRoute(
+        origin: origin,
+        destination: LatLng(location.latitude, location.longitude),
+        placeName: location.placeName,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentRoute = route;
+        _activeNavTarget = location;
+        _currentStepIndex = 0;
+        _distanceToActiveStepMeters =
+            route.steps.isNotEmpty ? route.steps[0].distanceMeters : 0;
+        _remainingDistanceToDestMeters = route.totalDistanceMeters;
+        if (autoStartLive) {
+          _isLiveNavigating = true;
+          _isRoutePreview = false;
+        } else {
+          _isRoutePreview = true;
+          _isLiveNavigating = false;
+        }
+      });
+
+      // Fit bounds rute agar seluruh jalur terlihat
+      if (route.points.isNotEmpty) {
+        final bounds = LatLngBounds.fromPoints(route.points);
+        _mapController.fitCamera(
+          CameraFit.bounds(
+            bounds: bounds,
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 70),
+          ),
+        );
+      }
+
+      if (autoStartLive) {
+        _startLiveNavigation();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showLocationError('Gagal memuat rute navigasi: $e');
+    }
+  }
+
+  void _startLiveNavigation() {
+    if (_currentRoute == null || _activeNavTarget == null) return;
+
+    setState(() {
+      _isLiveNavigating = true;
+      _isRoutePreview = false;
+      _followCamera = true;
+      _currentStepIndex = 0;
+      _lastSpokenInstruction = '';
+    });
+
+    _voiceService.init();
+    _voiceService.speak(
+      'Navigasi menuju ${_activeNavTarget!.placeName} dimulai. Ikuti rute pada peta.',
+    );
+
+    if (_deviceLocation != null) {
+      _mapController.move(_deviceLocation!, 17.5);
+      _updateNavProgress(_deviceLocation!);
+    }
+
+    _startTrackingPosition();
+  }
+
+  void _startTrackingPosition() {
+    _positionStreamSub?.cancel();
+    _positionStreamSub = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 3,
+      ),
+    ).listen((position) {
+      if (!mounted || !_isLiveNavigating) return;
+
+      final userLoc = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _deviceLocation = userLoc;
+      });
+
+      if (_followCamera) {
+        _mapController.move(userLoc, 17.5);
+      }
+
+      _updateNavProgress(userLoc);
+    });
+  }
+
+  void _updateNavProgress(LatLng userLoc) {
+    if (_activeNavTarget == null || _currentRoute == null) return;
+
+    final distToDestMeters = Geolocator.distanceBetween(
+      userLoc.latitude,
+      userLoc.longitude,
+      _activeNavTarget!.latitude,
+      _activeNavTarget!.longitude,
+    );
+
+    setState(() {
+      _remainingDistanceToDestMeters = distToDestMeters;
+    });
+
+    // Cek kedatangan (radius <= 35 meter)
+    if (distToDestMeters <= 35) {
+      _positionStreamSub?.cancel();
+      _voiceService.speak(
+        'Selamat, Anda telah tiba di tujuan: ${_activeNavTarget!.placeName}',
+      );
+      _showArrivalDialog(_activeNavTarget!.placeName);
+      _stopNavigation();
+      return;
+    }
+
+    // Kemajuan langkah turn-by-turn
+    final steps = _currentRoute!.steps;
+    if (steps.isNotEmpty && _currentStepIndex < steps.length) {
+      final currentStep = steps[_currentStepIndex];
+      final distToStep = Geolocator.distanceBetween(
+        userLoc.latitude,
+        userLoc.longitude,
+        currentStep.location.latitude,
+        currentStep.location.longitude,
+      );
+
+      setState(() {
+        _distanceToActiveStepMeters = distToStep;
+      });
+
+      // Jika dalam jarak 25 meter dari titik manuver dan bukan langkah terakhir
+      if (distToStep < 25 && _currentStepIndex < steps.length - 1) {
+        setState(() {
+          _currentStepIndex++;
+          final nextStep = steps[_currentStepIndex];
+          _distanceToActiveStepMeters = Geolocator.distanceBetween(
+            userLoc.latitude,
+            userLoc.longitude,
+            nextStep.location.latitude,
+            nextStep.location.longitude,
+          );
+        });
+      }
+
+      // Suarakan instruksi jika baru
+      final activeStep = steps[_currentStepIndex];
+      final voiceText =
+          'Dalam ${_distanceToActiveStepMeters.round()} meter, ${activeStep.instruction}';
+      if (_voiceEnabled &&
+          voiceText != _lastSpokenInstruction &&
+          _distanceToActiveStepMeters > 30) {
+        _lastSpokenInstruction = voiceText;
+        _voiceService.speak(voiceText);
+      }
+    }
+  }
+
+  void _stopNavigation() {
+    _positionStreamSub?.cancel();
+    _voiceService.stop();
+    setState(() {
+      _isLiveNavigating = false;
+      _followCamera = true;
+      _currentStepIndex = 0;
+    });
+  }
+
+  void _clearRoute() {
+    _stopNavigation();
+    setState(() {
+      _isRoutePreview = false;
+      _currentRoute = null;
+      _activeNavTarget = null;
+    });
+  }
+
+  void _showArrivalDialog(String placeName) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => SystemResponseDialog.success(
+        title: 'Tiba di Tujuan!',
+        description: 'Selamat, Anda telah sampai di $placeName.',
+        buttonText: 'Selesai',
+        imagePath: 'public/laporan sukses.svg',
+        onButtonPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  void _showGpsErrorModal(MapLocation destination) {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => SystemResponseDialog.error(
+        title: 'Lokasi Belum Aktif',
+        description:
+            'Sleman Akses membutuhkan akses GPS untuk memandu rute langsung. Silakan aktifkan GPS perangkat Anda.',
+        buttonText: 'Coba Deteksi Lagi',
+        imagePath: 'public/maskot-side-eye.svg',
+        onButtonPressed: () async {
+          Navigator.pop(context);
+          await _requestAndFetchLocation();
+          if (_deviceLocation != null) {
+            startNavigationTo(destination);
+          }
+        },
+      ),
+    );
+  }
+
   void _showLocationDetails(BuildContext context, MapLocation location) {
     showModalBottomSheet<void>(
       context: context,
@@ -1250,20 +1700,8 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => Dialog(
-                          backgroundColor: Colors.transparent,
-                          child: SystemResponseDialog.success(
-                            title: 'Segera Hadir!',
-                            description: 'Fitur Rute Navigasi sedang dalam tahap pengembangan.',
-                            buttonText: 'Tutup',
-                            imagePath: 'public/maskot-genit.svg',
-                            shadowColor: AppTheme.textOnsurface,
-                            onButtonPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                      );
+                      Navigator.pop(context); // Tutup bottom sheet
+                      startNavigationTo(location);
                     },
                     icon: const Icon(Icons.navigation),
                     label: const Text('Rute Navigasi'),
